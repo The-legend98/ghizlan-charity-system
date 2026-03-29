@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Request extends Model
 {
       protected $fillable = [
-        'full_name', 'phone', 'age', 'gender',
+        'ref_number','full_name', 'phone', 'age', 'gender',
         'family_members', 'children_count',
         'monthly_income', 'housing_status',
         'region', 'address',

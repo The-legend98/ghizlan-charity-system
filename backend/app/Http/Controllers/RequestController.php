@@ -27,42 +27,48 @@ class RequestController extends Controller
             'description'     => 'required|string|min:20',
         ]);
 
+       do {
+         $refNumber = 'GH-' . random_int(1000000, 9999999);
+        } while (Request::where('ref_number', $refNumber)->exists());
+
+        $data['ref_number'] = $refNumber;
+
         $request = Request::create($data);
 
         return response()->json([
             'message'    => 'تم استلام طلبك بنجاح',
             'request_id' => $request->id,
-            'ref_number' => '#' . str_pad($request->id, 4, '0', STR_PAD_LEFT),
+            'ref_number' => $request->ref_number,
         ], 201);
     }
 
     // تتبع الطلب برقمه أو رقم الهاتف — بدون login
-    public function track(HttpRequest $http)
-    {
-        $http->validate([
-            'query' => 'required|string',
-        ]);
+   public function track(HttpRequest $http)
+{
+    $http->validate([
+        'query' => 'required|string',
+    ]);
 
-        $query = $http->input('query');
+    $query = $http->input('query');
 
+    $request = Request::where('ref_number', $query)
+        ->orWhere('ref_number', 'GH-' . $query)
+        ->orWhere('phone', $query)
+        ->first();
 
-        $request = Request::where('id', $query)
-            ->orWhere('phone', $query)
-            ->first();
-
-        if (!$request) {
-            return response()->json(['message' => 'لم يتم العثور على طلب بهذا الرقم'], 404);
-        }
-
-        return response()->json([
-            'ref_number'      => '#' . str_pad($request->id, 4, '0', STR_PAD_LEFT),
-            'full_name'       => $request->full_name,
-            'assistance_type' => $request->assistance_type,
-            'status'          => $request->status,
-            'created_at'      => $request->created_at->format('d M Y'),
-            'updated_at'      => $request->updated_at->format('d M Y — h:i A'),
-        ]);
+    if (!$request) {
+        return response()->json(['message' => 'لم يتم العثور على طلب بهذا الرقم'], 404);
     }
+
+    return response()->json([
+        'ref_number'      => $request->ref_number,
+        'full_name'       => $request->full_name,
+        'assistance_type' => $request->assistance_type,
+        'status'          => $request->status,
+        'created_at'      => $request->created_at->format('d M Y'),
+        'updated_at'      => $request->updated_at->format('d M Y — h:i A'),
+    ]);
+}
 
     // قائمة الطلبات — موظف/مدير
     public function index(HttpRequest $http)
@@ -123,6 +129,8 @@ class RequestController extends Controller
             'status'   => $http->status,
             'priority' => $http->priority ?? $request->priority,
         ]);
+
+
 
         // تسجيل في السجل
         RequestStatusLog::create([

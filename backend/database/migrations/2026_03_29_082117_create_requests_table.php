@@ -19,7 +19,7 @@ return new class extends Migration
             $table->enum('gender', ['male', 'female']);
             $table->integer('family_members');
             $table->integer('children_count')->default(0);
-            $table->decimal('monthly_income', 8, 2)->default(0);
+            $table->decimal('monthly_income', 20, 2)->default(0);
             $table->enum('housing_status', ['owned', 'rented', 'other']);
             $table->string('region');
             $table->string('address')->nullable();
