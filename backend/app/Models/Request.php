@@ -13,7 +13,7 @@ class Request extends Model
         'region', 'address',
         'assistance_type', 'description',
         'priority', 'status', 'assigned_to',
-        'documents_reminder_sent_at',
+        'documents_reminder_sent_at','email',
     ];
 
     protected $casts = [

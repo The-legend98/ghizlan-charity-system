@@ -6,6 +6,8 @@ use App\Models\Request;
 use App\Models\RequestStatusLog;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\RequestConfirmation;
 
 class RequestController extends Controller
 {
@@ -25,6 +27,7 @@ class RequestController extends Controller
             'address'         => 'nullable|string|max:500',
             'assistance_type' => ['required', Rule::in(['medical', 'education', 'financial'])],
             'description'     => 'required|string|min:20',
+            'email'           => 'nullable|email|max:255',
         ]);
 
        do {
@@ -34,6 +37,18 @@ class RequestController extends Controller
         $data['ref_number'] = $refNumber;
 
         $request = Request::create($data);
+
+       if (!empty($data['email'])) {
+            try {
+                Mail::to($data['email'])->send(new RequestConfirmation(
+                    fullName: $request->full_name,
+                    refNumber: $request->ref_number,
+                    assistanceType: $request->assistance_type,
+                ));
+            } catch (\Exception $e) {
+                \Log::error('Mail error: ' . $e->getMessage());
+            }
+        }
 
         return response()->json([
             'message'    => 'تم استلام طلبك بنجاح',
