@@ -8,6 +8,10 @@ use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\RequestConfirmation;
+use App\Mail\StatusUpdated;
+use App\Events\NewRequestSubmitted;
+
+
 
 class RequestController extends Controller
 {
@@ -30,13 +34,51 @@ class RequestController extends Controller
             'email'           => 'nullable|email|max:255',
         ]);
 
+        // منع التكرار — نفس الهاتف خلال 60 ثانية
+    $recentRequest = Request::where('phone', $data['phone'])
+        ->where('created_at', '>=', now()->subSeconds(60))
+        ->first();
+
+    if ($recentRequest) {
+        return response()->json([
+            'message' => 'تم إرسال طلبك مسبقاً، يُرجى الانتظار قليلاً',
+            'ref_number' => $recentRequest->ref_number,
+            'request_id' => $recentRequest->id,
+        ], 200);
+    }
+
        do {
          $refNumber = 'GH-' . random_int(1000000, 9999999);
         } while (Request::where('ref_number', $refNumber)->exists());
 
         $data['ref_number'] = $refNumber;
 
+        // توزيع ذكي — اختر الموظف الأقل طلبات
+        $employee = \App\Models\User::where('role', 'employee')
+            ->where('is_active', true)
+            ->withCount(['assignedRequests' => function ($q) {
+                $q->whereIn('status', ['new', 'reviewing', 'needs_info']);
+            }])
+            ->orderBy('assigned_requests_count', 'asc')
+            ->first();
+
+        if ($employee) {
+            $data['assigned_to'] = $employee->id;
+        }
+
         $request = Request::create($data);
+
+        try {
+            broadcast(new NewRequestSubmitted(
+                requestId:      (string) $request->id,
+                fullName:       $request->full_name,
+                refNumber:      $request->ref_number,
+                assistanceType: $request->assistance_type,
+                region:         $request->region,
+            ))->toOthers();
+        } catch (\Exception $e) {
+            \Log::error('Broadcast error: ' . $e->getMessage());
+        }
 
        if (!empty($data['email'])) {
             try {
@@ -64,6 +106,8 @@ class RequestController extends Controller
         'query' => 'required|string',
     ]);
 
+    
+
     $query = $http->input('query');
 
     $request = Request::where('ref_number', $query)
@@ -76,6 +120,8 @@ class RequestController extends Controller
     }
 
     return response()->json([
+        'id'              => $request->id,
+        'phone'           => $request->phone,
         'ref_number'      => $request->ref_number,
         'full_name'       => $request->full_name,
         'assistance_type' => $request->assistance_type,
@@ -89,6 +135,11 @@ class RequestController extends Controller
     public function index(HttpRequest $http)
     {
         $query = Request::query();
+        $user  = $http->user();
+
+        if ($user->role === 'employee') {
+        $query->where('assigned_to', $user->id);
+    }
 
         if ($http->status) {
             $query->where('status', $http->status);
@@ -108,8 +159,20 @@ class RequestController extends Controller
                   ->orWhere('phone', 'like', '%' . $http->search . '%');
             });
         }
+        if ($http->assigned_to) {
+        $query->where('assigned_to', $http->assigned_to);
+        }
 
-        $requests = $query->orderBy('created_at', 'desc')->paginate(20);
+        if ($http->date_from) {
+            $query->whereDate('created_at', '>=', $http->date_from);
+        }
+
+        if ($http->date_to) {
+            $query->whereDate('created_at', '<=', $http->date_to);
+        }
+
+        $perPage = $http->get('per_page', 10);
+        $requests = $query->with(['assignedTo', 'documents'])->orderBy('created_at', 'desc') ->paginate($perPage);
 
         return response()->json($requests);
     }
@@ -145,6 +208,18 @@ class RequestController extends Controller
             'priority' => $http->priority ?? $request->priority,
         ]);
 
+        if (!empty($request->email)) {
+            try {
+                Mail::to($request->email)->send(new StatusUpdated(
+                    fullName:  $request->full_name,
+                    refNumber: $request->ref_number,
+                    newStatus: $http->status,
+                    note:      $http->note ?? '',
+                ));
+            } catch (\Exception $e) {
+                \Log::error('Status mail error: ' . $e->getMessage());
+            }
+        }
 
 
         // تسجيل في السجل

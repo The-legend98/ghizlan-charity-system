@@ -45,4 +45,7 @@ class Request extends Model
     {
         return $this->hasMany(NotificationLog::class);
     }
+
+    public function documentation() {
+    return $this->hasOne(CaseDocumentation::class, 'request_id');}
 }

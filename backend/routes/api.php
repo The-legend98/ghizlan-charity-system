@@ -5,6 +5,9 @@ use App\Http\Controllers\RequestController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\CaseDocumentationController;
+
 
 
 
@@ -13,6 +16,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/requests', [RequestController::class, 'store']);
 Route::get('/requests/track', [RequestController::class, 'track']);
 Route::post('/requests/{requestId}/documents', [DocumentController::class, 'store']);
+
+Route::post('/requests/{id}/documents/add', [DocumentController::class, 'addMore']);
+
 
 
 // مع login
@@ -30,4 +36,24 @@ Route::middleware('auth:sanctum')->group(function () {
     // المستندات
     Route::get('/requests/{requestId}/documents', [DocumentController::class, 'index']);
     Route::delete('/requests/{requestId}/documents/{documentId}', [DocumentController::class, 'destroy']);
+    // المستخدمين
+    Route::get('/users', [UserController::class, 'index']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::patch('/users/{id}', [UserController::class, 'update']);
+    // أداء الموظفين
+    Route::get('/users/performance', [UserController::class, 'performance']);
+    // تغير كلمة المرور للموظف و حذف المستخدم (للمدير فقط)
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    Route::patch('/users/{id}/password', [UserController::class, 'resetPassword']);
+
+    // Documentation
+    Route::post('/documentation', [CaseDocumentationController::class, 'store']);
+    Route::get('/documentation', [CaseDocumentationController::class, 'index']);
+    Route::get('/documentation/request/{requestId}', [CaseDocumentationController::class, 'show']);
+    Route::patch('/documentation/{id}/follow-up', [CaseDocumentationController::class, 'updateFollowUp']);
+    Route::delete('/documentation/files/{fileId}', [CaseDocumentationController::class, 'deleteFile']);
+
+    Route::get('/documents/download/{documentId}', [DocumentController::class, 'download']);
+
+
 });

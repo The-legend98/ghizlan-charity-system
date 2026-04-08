@@ -13,6 +13,8 @@ export const requestSchema = z.object({
   address:         z.string().optional(),
   assistance_type: z.enum(['medical', 'education', 'financial']),
   description:     z.string().min(20, 'الوصف يجب أن يكون ٢٠ حرف على الأقل'),
+  email: z.string().email('إيميل غير صحيح').optional().or(z.literal('')),
+
 });
 
 export type RequestForm = z.infer<typeof requestSchema>;
