@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('full_name');
             $table->string('phone');
+            $table->string('national_id')->nullable();
             $table->integer('age');
             $table->enum('gender', ['male', 'female']);
             $table->integer('family_members');
             $table->integer('children_count')->default(0);
-            $table->decimal('monthly_income', 20, 2)->default(0);
+            $table->enum('income_range', ['none', 'under_1m', '1m_2m', '2m_4m', 'over_4m'])->nullable();
             $table->enum('housing_status', ['owned', 'rented', 'other']);
             $table->string('region');
             $table->string('address')->nullable();

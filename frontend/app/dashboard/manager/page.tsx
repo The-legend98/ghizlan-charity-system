@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import NotificationBell from '@/components/NotificationBell';
-import { exportStats } from '@/lib/exportExcel';
-
 
 const PRIMARY   = '#1B6CA8';
 const PRIMARY_L = '#4AACCD';
@@ -13,21 +11,20 @@ const GOLD      = '#C9A84C';
 
 const BgPattern = () => (
   <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-    <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
       <defs>
         <pattern id="dots" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
           <circle cx="15" cy="15" r="1" fill="#1B6CA8" opacity="0.12"/>
         </pattern>
       </defs>
       <rect width="1200" height="800" fill="url(#dots)"/>
-      <circle cx="1150" cy="80" r="160" fill="none" stroke="#1B6CA8" strokeWidth="0.6" opacity="0.2"/>
-      <circle cx="1150" cy="80" r="100" fill="none" stroke="#4AACCD" strokeWidth="0.6" opacity="0.2"/>
-      <circle cx="1150" cy="80" r="50" fill="none" stroke="#C9A84C" strokeWidth="0.6" opacity="0.2"/>
-      <circle cx="60" cy="720" r="130" fill="none" stroke="#1B6CA8" strokeWidth="0.6" opacity="0.15"/>
-      <circle cx="60" cy="720" r="80" fill="none" stroke="#4AACCD" strokeWidth="0.6" opacity="0.15"/>
-      <line x1="900" y1="0" x2="1200" y2="300" stroke="#4AACCD" strokeWidth="0.5" opacity="0.15"/>
-      <line x1="930" y1="0" x2="1200" y2="270" stroke="#1B6CA8" strokeWidth="0.5" opacity="0.1"/>
-      <line x1="0" y1="550" x2="250" y2="800" stroke="#C9A84C" strokeWidth="0.5" opacity="0.15"/>
+      <circle cx="1150" cy="80"  r="160" fill="none" stroke="#1B6CA8" strokeWidth="0.6" opacity="0.2"/>
+      <circle cx="1150" cy="80"  r="100" fill="none" stroke="#4AACCD" strokeWidth="0.6" opacity="0.2"/>
+      <circle cx="1150" cy="80"  r="50"  fill="none" stroke="#C9A84C" strokeWidth="0.6" opacity="0.2"/>
+      <circle cx="60"   cy="720" r="130" fill="none" stroke="#1B6CA8" strokeWidth="0.6" opacity="0.15"/>
+      <circle cx="60"   cy="720" r="80"  fill="none" stroke="#4AACCD" strokeWidth="0.6" opacity="0.15"/>
+      <line x1="900" y1="0"   x2="1200" y2="300" stroke="#4AACCD" strokeWidth="0.5" opacity="0.15"/>
+      <line x1="0"   y1="550" x2="250"  y2="800" stroke="#C9A84C" strokeWidth="0.5" opacity="0.15"/>
     </svg>
   </div>
 );
@@ -37,6 +34,7 @@ export default function ManagerDashboard() {
   const [user, setUser]       = useState<any>(null);
   const [stats, setStats]     = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -75,8 +73,8 @@ export default function ManagerDashboard() {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#EEF5FB' }}>
-      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: PRIMARY }}></div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EEF5FB' }}>
+      <div style={{ width: 32, height: 32, border: `3px solid ${PRIMARY}30`, borderTopColor: PRIMARY, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
     </div>
   );
 
@@ -86,21 +84,21 @@ export default function ManagerDashboard() {
       value: stats?.total ? Math.round((stats.approved / stats.total) * 100) : 0,
       desc: 'من إجمالي الطلبات',
       color: '#059669', bg: '#D1FAE5',
-      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
     },
     {
       title: 'طلبات معلّقة',
       value: stats?.total ? Math.round(((stats.new + stats.reviewing) / stats.total) * 100) : 0,
       desc: 'تحتاج مراجعة أو قرار',
       color: '#D97706', bg: '#FEF3C7',
-      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
     },
     {
       title: 'نسبة الرفض',
       value: stats?.total ? Math.round((stats.rejected / stats.total) * 100) : 0,
       desc: 'من إجمالي الطلبات',
       color: '#DC2626', bg: '#FEE2E2',
-      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
     },
   ];
 
@@ -108,199 +106,234 @@ export default function ManagerDashboard() {
     {
       title: 'إدارة الطلبات', desc: 'مراجعة وتغيير حالة الطلبات',
       color: PRIMARY, bg: `${PRIMARY}12`, path: '/dashboard/requests',
-      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      icon: <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>,
     },
     {
       title: 'إدارة الموظفين', desc: 'إضافة وإدارة حسابات الموظفين',
       color: GOLD, bg: `${GOLD}15`, path: '/dashboard/users',
-      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      icon: <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
     },
     {
       title: 'أداء الموظفين', desc: 'إحصائيات وتقارير الأداء',
       color: PRIMARY_L, bg: `${PRIMARY_L}15`, path: '/dashboard/performance',
-      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      icon: <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>,
+    },
+    {
+      title: 'التقارير والتصدير', desc: 'تصدير البيانات بصيغة Excel مع فلاتر',
+      color: '#059669', bg: '#05966912', path: '/dashboard/reports',
+      icon: <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
     },
   ];
 
+  const statCards = [
+    { label: 'إجمالي الطلبات', value: stats?.total      || 0, color: PRIMARY   },
+    { label: 'جديدة',          value: stats?.new         || 0, color: PRIMARY_L },
+    { label: 'قيد المراجعة',   value: stats?.reviewing   || 0, color: '#D97706' },
+    { label: 'تحتاج معلومات',  value: stats?.needs_info  || 0, color: '#7C3AED' },
+    { label: 'مقبولة',         value: stats?.approved    || 0, color: '#059669' },
+    { label: 'مرفوضة',         value: stats?.rejected    || 0, color: '#DC2626' },
+  ];
+
   return (
-    <div className="min-h-screen" style={{ background: '#EEF5FB', position: 'relative' }} dir="rtl">
+    <div dir="rtl" style={{ minHeight: '100vh', background: '#EEF5FB', position: 'relative' }}>
       <BgPattern />
 
-      {/* Navbar */}
-      <nav style={{
-        background: 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: `1px solid ${PRIMARY}20`,
-        position: 'sticky', top: 0, zIndex: 50,
-      }}>
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-              style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>غ</div>
-            <div>
-              <div className="text-sm font-bold text-gray-900">لوحة المدير</div>
-              <div className="text-xs" style={{ color: PRIMARY_L }}>مؤسسة غزلان الخير</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => router.push('/dashboard/requests')}
-              className="text-xs px-3 py-2 rounded-xl border transition-all text-gray-600 hover:bg-white"
-              style={{ borderColor: `${PRIMARY}30`, background: `${PRIMARY}06` }}>
-              قائمة الطلبات
-            </button>
-            <NotificationBell />
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2"
-              style={{ background: `${GOLD}15`, border: `1px solid ${GOLD}30` }}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #E8C96A)` }}>
-                {user?.name?.charAt(0)}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-gray-900">{user?.name}</div>
-                <div className="text-xs" style={{ color: GOLD }}>مدير</div>
-              </div>
-            </div>
-            <button onClick={handleLogout}
-              className="text-xs px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-all border border-red-100">
-              خروج
-            </button>
+     {/* ══ NAVBAR ══ */}
+    <nav style={{
+      background: 'rgba(255,255,255,0.93)',
+      backdropFilter: 'blur(12px)',
+      borderBottom: `1px solid ${PRIMARY}20`,
+      position: 'sticky', top: 0, zIndex: 50,
+    }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, cursor: 'pointer' }}
+          onClick={() => router.push('/dashboard/manager')}>
+          <img src="/g-logo.png" alt="غزلان الخير"
+            style={{ width: 38, height: 38, objectFit: 'contain' }}
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.2px', lineHeight: 1.2 }}>غزلان الخير</div>
+            <div style={{ fontSize: 8, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
           </div>
         </div>
-      </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8" style={{ position: 'relative', zIndex: 1 }}>
+        {/* Desktop actions */}
+        <div className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
-        {/* Welcome Card */}
-        <div className="rounded-2xl p-6 mb-8 text-white relative overflow-hidden"
-          style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_L} 100%)` }}>
-          <div style={{
-            position: 'absolute', top: -50, left: -50,
-            width: 200, height: 200, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)'
-          }}/>
-          <div style={{
-            position: 'absolute', bottom: -40, right: 60,
-            width: 150, height: 150, borderRadius: '50%',
-            background: 'rgba(201,168,76,0.15)'
-          }}/>
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full text-xs font-medium"
-              style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}>
-              <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse"></span>
+          <NotificationBell />
+
+          {/* User Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 10, background: `${GOLD}15`, border: `1px solid ${GOLD}30` }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${GOLD}, #E8C96A)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+              {user?.name?.charAt(0)}
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
+              <div style={{ fontSize: 9, color: GOLD }}>مدير</div>
+            </div>
+          </div>
+
+          {/* Logout */}
+          <button onClick={handleLogout} className="nb-logout-btn"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '7px 13px', cursor: 'pointer', transition: 'all 0.2s' }}>
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            خروج
+          </button>
+        </div>
+
+        {/* Mobile */}
+        <div className="nav-mobile" style={{ display: 'none', alignItems: 'center', gap: 8 }}>
+          <NotificationBell />
+          <button onClick={() => setMenuOpen(!menuOpen)}
+            style={{ width: 36, height: 36, borderRadius: 9, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="16" height="16" fill="none" stroke="#4B5563" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {menuOpen && (
+        <div style={{ background: 'rgba(255,255,255,0.97)', borderTop: `1px solid ${PRIMARY}15`, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12, background: `${GOLD}10`, border: `1px solid ${GOLD}20` }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: `linear-gradient(135deg, ${GOLD}, #E8C96A)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 700 }}>{user?.name?.charAt(0)}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
+              <div style={{ fontSize: 10, color: GOLD }}>مدير النظام</div>
+            </div>
+          </div>
+          <button onClick={handleLogout}
+            style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'right' as const }}>
+            تسجيل الخروج
+          </button>
+        </div>
+      )}
+    </nav>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 16px 48px', position: 'relative', zIndex: 1 }}>
+
+        {/* ══ Welcome Banner ══ */}
+        <div style={{
+          borderRadius: 20, padding: '20px 20px', marginBottom: 20,
+          background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_L} 100%)`,
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -40, left: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+          <div style={{ position: 'absolute', bottom: -30, right: 40, width: 120, height: 120, borderRadius: '50%', background: 'rgba(201,168,76,0.15)' }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '5px 12px', borderRadius: 100, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', fontSize: 11, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }} />
               النظام نشط — مؤسسة غزلان الخير
             </div>
-            <h1 className="text-2xl font-bold mb-1">مرحباً، {user?.name} 👋</h1>
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>هيك ملخص أداء المؤسسة اليوم</p>
+            <h1 style={{ fontSize: 'clamp(18px, 4vw, 26px)', fontWeight: 900, color: 'white', marginBottom: 4, letterSpacing: '-0.5px' }}>
+              مرحباً، {user?.name} 
+            </h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', margin: 0 }}>هيك ملخص أداء المؤسسة اليوم</p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          {[
-            { label: 'إجمالي الطلبات', value: stats?.total || 0,      color: PRIMARY,   borderColor: PRIMARY },
-            { label: 'جديدة',          value: stats?.new || 0,         color: PRIMARY_L, borderColor: PRIMARY_L },
-            { label: 'قيد المراجعة',   value: stats?.reviewing || 0,   color: '#D97706', borderColor: '#D97706' },
-            { label: 'تحتاج معلومات',  value: stats?.needs_info || 0,  color: '#7C3AED', borderColor: '#7C3AED' },
-            { label: 'مقبولة',         value: stats?.approved || 0,    color: '#059669', borderColor: '#059669' },
-            { label: 'مرفوضة',         value: stats?.rejected || 0,    color: '#DC2626', borderColor: '#DC2626' },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-2xl p-4 text-center"
-              style={{
-                background: 'white',
-                border: `1px solid ${stat.borderColor}20`,
-                borderTop: `3px solid ${stat.borderColor}`,
-                boxShadow: `0 2px 12px ${stat.color}10`
-              }}>
-              <div className="text-3xl font-bold mb-1" style={{ color: stat.color }}>{stat.value}</div>
-              <div className="text-xs text-gray-500">{stat.label}</div>
+        {/* ══ Stats Grid ══ */}
+        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+          {statCards.map(stat => (
+            <div key={stat.label} style={{
+              background: 'white', borderRadius: 16, padding: '14px 12px', textAlign: 'center',
+              border: `1px solid ${stat.color}18`, borderTop: `3px solid ${stat.color}`,
+              boxShadow: `0 2px 12px ${stat.color}10`,
+            }}>
+              <div style={{ fontSize: 'clamp(20px, 4vw, 30px)', fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: 4 }}>{stat.value}</div>
+              <div style={{ fontSize: 11, color: '#6B7280' }}>{stat.label}</div>
             </div>
           ))}
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {kpis.map((kpi) => (
-            <div key={kpi.title} className="rounded-2xl p-5"
-              style={{ background: 'white', border: `1px solid ${kpi.color}15`, boxShadow: `0 2px 12px ${kpi.color}08` }}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-sm font-semibold text-gray-900">{kpi.title}</div>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{ background: kpi.bg, color: kpi.color }}>
+        {/* ══ KPIs ══ */}
+        <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+          {kpis.map(kpi => (
+            <div key={kpi.title} style={{ background: 'white', borderRadius: 18, padding: '18px 16px', border: `1px solid ${kpi.color}15`, boxShadow: `0 2px 12px ${kpi.color}08` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>{kpi.title}</div>
+                <div style={{ width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: kpi.bg, color: kpi.color, flexShrink: 0 }}>
                   {kpi.icon}
                 </div>
               </div>
-              <div className="text-3xl font-bold mb-1" style={{ color: kpi.color }}>{kpi.value}%</div>
-              <div className="text-xs text-gray-400 mb-3">{kpi.desc}</div>
-              <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{ width: `${kpi.value}%`, background: kpi.color, opacity: 0.75 }}></div>
+              <div style={{ fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 900, color: kpi.color, marginBottom: 4 }}>{kpi.value}%</div>
+              <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 10 }}>{kpi.desc}</div>
+              <div style={{ height: 6, borderRadius: 3, background: '#F3F4F6', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 3, width: `${kpi.value}%`, background: kpi.color, opacity: 0.75, transition: 'width 0.6s ease' }} />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {quickActions.map((action) => (
-            <div key={action.title}
+        {/* ══ Quick Actions ══ */}
+        <div className="actions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          {quickActions.map(action => (
+            <div
+              key={action.title}
               onClick={() => router.push(action.path)}
-              className="rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5"
               style={{
-                background: 'white',
-                border: `1px solid ${action.color}20`,
+                background: 'white', borderRadius: 18, padding: '16px',
+                border: `1px solid ${action.color}20`, cursor: 'pointer',
                 boxShadow: `0 2px 12px ${action.color}08`,
+                transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: 14,
               }}
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = `0 8px 24px ${action.color}20`)}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = `0 2px 12px ${action.color}08`)}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${action.color}20`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 12px ${action.color}08`; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
             >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: action.bg, color: action.color }}>
-                  {action.icon}
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-gray-900">{action.title}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">{action.desc}</div>
-                </div>
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke={action.color} viewBox="0 0 24 24" opacity="0.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-                
+              <div style={{ width: 46, height: 46, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: action.bg, color: action.color, flexShrink: 0 }}>
+                {action.icon}
               </div>
-            </div>
-            
-          ))}
-
-          {/* Export Excel */}
-          <div
-          onClick={() => router.push('/dashboard/reports')}
-          className="rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5"
-          style={{ background: 'white', border: '1px solid #05966920', boxShadow: '0 2px 12px #05966908' }}
-          onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 8px 24px #05966920')}
-          onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 2px 12px #05966908')}>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: '#05966912', color: '#059669' }}>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 3 }}>{action.title}</div>
+                <div style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.4 }}>{action.desc}</div>
+              </div>
+              <svg width="16" height="16" fill="none" stroke={action.color} viewBox="0 0 24 24" style={{ opacity: 0.5, flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
               </svg>
             </div>
-            <div className="flex-1">
-              <div className="text-sm font-semibold text-gray-900">التقارير والتصدير</div>
-              <div className="text-xs text-gray-400 mt-0.5">تصدير البيانات بصيغة Excel مع فلاتر</div>
-            </div>
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="#059669" viewBox="0 0 24 24" opacity="0.5">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-          </div>
+          ))}
         </div>
-
-
-
-        </div>
-        
 
       </div>
-      
+
+      <style>{`
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .nav-desktop { display: flex !important; }
+  .nav-mobile  { display: none  !important; }
+
+  .nb-requests-btn:hover {
+    background: rgba(74,172,205,0.12) !important;
+    color: white !important;
+    border-color: rgba(74,172,205,0.25) !important;
+  }
+  .nb-logout-btn:hover {
+    background: rgba(220,38,38,0.15) !important;
+    color: #FCA5A5 !important;
+  }
+
+  @media (max-width: 768px) {
+    .nav-desktop  { display: none !important; }
+    .nav-mobile   { display: flex !important; }
+    .stats-grid   { grid-template-columns: repeat(3, 1fr) !important; }
+    .kpi-grid     { grid-template-columns: 1fr !important; }
+    .actions-grid { grid-template-columns: 1fr !important; }
+  }
+
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .stats-grid   { grid-template-columns: repeat(3, 1fr) !important; }
+    .kpi-grid     { grid-template-columns: repeat(3, 1fr) !important; }
+    .actions-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+`}</style>
     </div>
   );
 }

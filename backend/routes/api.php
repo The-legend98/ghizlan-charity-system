@@ -7,18 +7,23 @@ use App\Http\Controllers\NoteController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CaseDocumentationController;
+use App\Http\Controllers\VolunteerController;
+
 
 
 
 
 // بدون login
-Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('throttle:5,1')->post('/login', [AuthController::class, 'login']);
 Route::post('/requests', [RequestController::class, 'store']);
 Route::get('/requests/track', [RequestController::class, 'track']);
 Route::post('/requests/{requestId}/documents', [DocumentController::class, 'store']);
 
 Route::post('/requests/{id}/documents/add', [DocumentController::class, 'addMore']);
+Route::post('/volunteer', [VolunteerController::class, 'store']);
 
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
 
 
 // مع login
@@ -54,6 +59,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/documentation/files/{fileId}', [CaseDocumentationController::class, 'deleteFile']);
 
     Route::get('/documents/download/{documentId}', [DocumentController::class, 'download']);
+
+    Route::patch('/requests/{id}/follow-up', [RequestController::class, 'updateFollowUp']);
+
+    Route::get('/proxy-image', function(\Illuminate\Http\Request $request) {
+        $path = storage_path('app/public/' . $request->query('path'));
+        if (!file_exists($path)) abort(404);
+        $mime = mime_content_type($path);
+        return response()->file($path, ['Content-Type' => $mime]);
+    });
 
 
 });

@@ -18,12 +18,14 @@ class NewRequestSubmitted implements ShouldBroadcast
         public string $refNumber,
         public string $assistanceType,
         public string $region,
+        public int $assignedToId,
     ) {}
 
     public function broadcastOn(): array
     {
         return [
             new Channel('requests'),
+            new Channel('employee-' . $this->assignedToId),
         ];
     }
 

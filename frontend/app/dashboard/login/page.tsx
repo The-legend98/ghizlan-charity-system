@@ -63,12 +63,45 @@ export default function DashboardLoginPage() {
       <div className="w-full max-w-md" style={{ position: 'relative', zIndex: 1 }}>
 
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-xl"
-            style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>غ</div>
-          <h1 className="text-xl font-bold text-gray-900">مؤسسة غزلان الخير</h1>
-          <p className="text-sm mt-1 font-medium" style={{ color: PRIMARY_L }}>Ghozlan Alkhair Foundation</p>
-        </div>
+    {/* Logo Container */}
+<div className="flex flex-col items-center justify-center text-center mb-8 w-full">
+  
+  {/* الصورة - تأكدت من إضافة mx-auto لضمان توسيطها */}
+  <img
+    src="/g-logo.png"
+    alt="غزلان الخير"
+    className="nb-logo-img mx-auto mb-4" 
+    style={{ 
+      width: 100, 
+      height: 100, 
+      objectFit: 'contain', 
+      filter: 'drop-shadow(0 0 7px rgba(74,172,205,0.45))' 
+    }}
+  />
+
+  {/* العنوان العربي - أضفنا خط تجوال */}
+  <h1 style={{ 
+      fontFamily: "'Tajawal', sans-serif",
+      fontSize: '1.5rem', // يعادل text-xl
+      fontWeight: 800,
+      color: '#111827' // يعادل text-gray-900
+    }}>
+    مؤسسة غزلان الخير
+  </h1>
+
+  {/* العنوان الإنجليزي - أضفنا خط Roboto وحروف كبيرة */}
+  <p style={{ 
+      color: PRIMARY_L, 
+      fontFamily: "'Roboto', sans-serif",
+      fontSize: '0.875rem', // يعادل text-sm
+      fontWeight: 500,
+      textTransform: 'uppercase',
+      letterSpacing: '1px',
+      marginTop: '4px'
+    }}>
+    Ghozlan Alkhair Foundation
+  </p>
+</div>
 
         {/* Card */}
         <div className="rounded-2xl p-8"
@@ -157,6 +190,14 @@ export default function DashboardLoginPage() {
                 </>
               )}
             </button>
+
+            <div className="text-center mt-3">
+              <button onClick={() => router.push('/dashboard/forgot-password')}
+                className="text-xs font-medium transition-all"
+                style={{ color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer' }}>
+                نسيت كلمة المرور؟
+              </button>
+            </div>
           </form>
 
           {/* Divider */}

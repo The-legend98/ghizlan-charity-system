@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState ,useRef  } from 'react';
 import { useRouter } from 'next/navigation';
 
 const PRIMARY = '#1B6CA8';
@@ -28,15 +28,29 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+const lastVisitKeyRef = useRef('last_visit');
 
- useEffect(() => {
-  // جيب عدد الطلبات الجديدة من الـ API
+useEffect(() => {
+  if (typeof window === 'undefined') return;
+
+  const userData = localStorage.getItem('user');
+  if (!userData) return;
+  const user = JSON.parse(userData);
+
+  //  مفتاح خاص لكل مستخدم
+  lastVisitKeyRef.current = `last_visit_${user.id}`;
+const lastVisit = localStorage.getItem(lastVisitKeyRef.current) || new Date(0).toISOString();
+
+  // جيب الطلبات الجديدة
   const fetchNewRequests = async () => {
     try {
       const { default: api } = await import('@/lib/axios');
       const res = await api.get('/requests?status=new');
       const newReqs = res.data.data || [];
-      const mapped = newReqs.map((r: any) => ({
+      const filtered = newReqs.filter((r: any) =>
+        new Date(r.created_at) > new Date(lastVisit)
+      );
+      const mapped = filtered.map((r: any) => ({
         id:             String(r.id),
         requestId:      String(r.id),
         fullName:       r.full_name,
@@ -51,33 +65,57 @@ export default function NotificationBell() {
   };
 
   fetchNewRequests();
-
-  // ثم اشترك بالـ Real-time
-  if (typeof window === 'undefined') return;
+  localStorage.setItem(lastVisitKeyRef.current, new Date().toISOString());
   const { getEcho } = require('@/lib/echo');
   const echoInstance = getEcho();
-  echoInstance.channel('requests').listen('.new.request', (data: any) => {
-    const notification: Notification = {
-      id:             Math.random().toString(36),
-      requestId:      data.requestId,
-      fullName:       data.fullName,
-      refNumber:      data.refNumber,
-      assistanceType: data.assistanceType,
-      region:         data.region,
-      time:           new Date(),
-      read:           false,
-    };
-    setNotifications(prev => [notification, ...prev].slice(0, 20));
-  });
+
+  // ✅ المدير يسمع كل الطلبات، الموظف يسمع طلباته بس
+  if (user.role === 'manager') {
+    echoInstance
+      .channel('requests')
+      .listen('.new.request', (data: any) => {
+        setNotifications(prev => [{
+          id:             Math.random().toString(36),
+          requestId:      data.requestId,
+          fullName:       data.fullName,
+          refNumber:      data.refNumber,
+          assistanceType: data.assistanceType,
+          region:         data.region,
+          time:           new Date(),
+          read:           false,
+        }, ...prev].slice(0, 20));
+      });
+  } else {
+    echoInstance
+      .channel(`employee-${user.id}`) // ← public channel خاص بالموظف
+      .listen('.new.request', (data: any) => {
+        setNotifications(prev => [{
+          id:             Math.random().toString(36),
+          requestId:      data.requestId,
+          fullName:       data.fullName,
+          refNumber:      data.refNumber,
+          assistanceType: data.assistanceType,
+          region:         data.region,
+          time:           new Date(),
+          read:           false,
+        }, ...prev].slice(0, 20));
+      });
+  }
 
   return () => {
-    echoInstance.leaveChannel('requests');
+    if (user.role === 'manager') {
+      echoInstance.leaveChannel('requests');
+    } else {
+      echoInstance.leaveChannel(`employee-${user.id}`);
+    }
   };
 }, []);
 
   const markAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
+  setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  //  حفظ وقت القراءة
+ localStorage.setItem(lastVisitKeyRef.current, new Date().toISOString());
+};
 
   const handleNotificationClick = (notification: Notification) => {
     setNotifications(prev =>

@@ -11,13 +11,13 @@ export function getEcho(): any {
   echo = new Echo({
     broadcaster: 'reverb',
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY!,
-    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || 'localhost',
-    wsPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || '8080'),
-    wssPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || '8080'),
+    wsHost: 'localhost',
+    wsPort: 8080,
+    wssPort: 8080,
     forceTLS: false,
     disableStats: true,
     enabledTransports: ['ws'],
-  });
+});
 
   return echo;
 }

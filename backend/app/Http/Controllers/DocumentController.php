@@ -56,16 +56,17 @@ class DocumentController extends Controller
 
     public function addMore(Request $http, $id)
     {
-        $http->validate([
+        
+    $http->validate([
             'files.*'    => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'phone'      => 'required|string',
             'ref_number' => 'required|string',
         ]);
 
-        $request = \App\Models\Request::findOrFail($id);
+        $requestModel = \App\Models\Request::findOrFail($id);
 
         // تحقق إن الهاتف ورقم المرجع مطابقان
-        if ($request->phone !== $http->phone || $request->ref_number !== $http->ref_number) {
+        if ($requestModel->phone !== $http->phone || $requestModel->ref_number !== $http->ref_number) {
             return response()->json(['message' => 'رقم الهاتف أو رقم المرجع غير صحيح'], 403);
         }
 

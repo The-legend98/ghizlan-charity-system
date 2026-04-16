@@ -3,22 +3,30 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 
 class Request extends Model
 {
+    use HasFactory;
       protected $fillable = [
         'ref_number','full_name', 'phone', 'age', 'gender',
         'family_members', 'children_count',
-        'monthly_income', 'housing_status',
+        'national_id', 'income_range', 'housing_status',
+        'housing_details',
         'region', 'address',
         'assistance_type', 'description',
         'priority', 'status', 'assigned_to',
-        'documents_reminder_sent_at','email',
+        'documents_reminder_sent_at','email', 'follow_up_date',
+        'follow_up_note', 
+        'follow_up_status',
     ];
 
     protected $casts = [
         'documents_reminder_sent_at' => 'datetime',
-        'monthly_income' => 'decimal:2',
+        'follow_up_date' => 'datetime',
+
+      
     ];
 
     public function assignedTo()

@@ -22,6 +22,9 @@ class UserController extends Controller
     // إضافة موظف جديد
     public function store(Request $request)
     {
+         if (auth()->user()->role !== 'manager') {
+        return response()->json(['message' => 'غير مصرح'], 403);
+    }
         $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',

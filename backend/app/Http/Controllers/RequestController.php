@@ -25,7 +25,8 @@ class RequestController extends Controller
             'gender'          => ['required', Rule::in(['male', 'female'])],
             'family_members'  => 'required|integer|min:1',
             'children_count'  => 'nullable|integer|min:0',
-            'monthly_income'  => 'nullable|numeric|min:0',
+            'national_id'  => 'nullable|string|max:20',
+            'income_range' => 'nullable|in:none,under_1m,1m_2m,2m_4m,over_4m',
             'housing_status'  => ['required', Rule::in(['owned', 'rented', 'other'])],
             'region'          => 'required|string|max:255',
             'address'         => 'nullable|string|max:500',
@@ -68,16 +69,19 @@ class RequestController extends Controller
 
         $request = Request::create($data);
 
-        try {
-            broadcast(new NewRequestSubmitted(
-                requestId:      (string) $request->id,
-                fullName:       $request->full_name,
-                refNumber:      $request->ref_number,
-                assistanceType: $request->assistance_type,
-                region:         $request->region,
-            ))->toOthers();
-        } catch (\Exception $e) {
-            \Log::error('Broadcast error: ' . $e->getMessage());
+        if ($employee) {
+            try {
+                broadcast(new NewRequestSubmitted(
+                    requestId:      (string) $request->id,
+                    fullName:       $request->full_name,
+                    refNumber:      $request->ref_number,
+                    assistanceType: $request->assistance_type,
+                    region:         $request->region,
+                    assignedToId:   $employee->id,  //  الموظف المعيّن
+                ))->toOthers();
+            } catch (\Exception $e) {
+                \Log::error('Broadcast error: ' . $e->getMessage());
+            }
         }
 
        if (!empty($data['email'])) {
@@ -126,8 +130,8 @@ class RequestController extends Controller
         'full_name'       => $request->full_name,
         'assistance_type' => $request->assistance_type,
         'status'          => $request->status,
-        'created_at'      => $request->created_at->format('d M Y'),
-        'updated_at'      => $request->updated_at->format('d M Y — h:i A'),
+        'created_at'      => $request->created_at->toISOString(),
+        'updated_at'      => $request->updated_at->toISOString(),
     ]);
 }
 
@@ -187,6 +191,11 @@ class RequestController extends Controller
             'assignedTo',
         ])->findOrFail($id);
 
+        $user = auth()->user();
+    if ($user->role === 'employee' && $request->assigned_to !== $user->id) {
+        return response()->json(['message' => 'غير مصرح'], 403);
+    }
+
         return response()->json($request);
     }
 
@@ -194,6 +203,11 @@ class RequestController extends Controller
     public function updateStatus(HttpRequest $http, $id)
     {
         $request = Request::findOrFail($id);
+
+        $user = auth()->user();
+    if ($user->role === 'employee' && $request->assigned_to !== $user->id) {
+        return response()->json(['message' => 'غير مصرح'], 403);
+    }
 
         $http->validate([
             'status' => ['required', Rule::in(['reviewing', 'needs_info', 'approved', 'rejected'])],
@@ -236,4 +250,31 @@ class RequestController extends Controller
             'status'  => $request->status,
         ]);
     }
+
+    public function updateFollowUp(HttpRequest $http, $id)
+{
+    $request = Request::findOrFail($id);
+
+    $user = auth()->user();
+    if ($user->role === 'employee' && $request->assigned_to !== $user->id) {
+        return response()->json(['message' => 'غير مصرح'], 403);
+    }
+
+    $http->validate([
+        'follow_up_date'   => 'nullable|date',
+        'follow_up_note'   => 'nullable|string|max:1000',
+        'follow_up_status' => 'required|in:none,scheduled,done,completed',
+    ]);
+
+    $request->update([
+        'follow_up_date'   => $http->follow_up_date,
+        'follow_up_note'   => $http->follow_up_note,
+        'follow_up_status' => $http->follow_up_status,
+    ]);
+
+    return response()->json([
+        'message' => 'تم تحديث المتابعة بنجاح',
+        'request' => $request,
+    ]);
+}
 }

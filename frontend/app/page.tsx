@@ -2,39 +2,61 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { motion, useScroll, useTransform, useSpring, Variants } from 'framer-motion';
+import { useTheme } from '@/app/providers/ThemeProvider';
+import { useLang } from '@/app/providers/LangProvider';
+import Navbar from '@/components/Navbar';
 
 const THEMES = {
   light: {
     bg: '#FFFFFF', bg2: '#F8FAFD', text: '#0A1628', textSub: '#4B5563',
     textMute: '#6B7280', border: '#EFF2F7', card: '#FFFFFF',
-    navBg: 'rgba(255,255,255,0.97)', navBorder: 'rgba(27,108,168,0.08)',
     footerBg: '#0A1628', footerText: '#4B5563',
   },
   dark: {
     bg: '#0D1117', bg2: '#161B22', text: '#F0F6FC', textSub: '#8B949E',
     textMute: '#6E7681', border: '#21262D', card: '#161B22',
-    navBg: 'rgba(13,17,23,0.97)', navBorder: 'rgba(74,172,205,0.15)',
     footerBg: '#010409', footerText: '#6E7681',
   },
 };
 
-const PRIMARY = '#1B6CA8';
+const PRIMARY   = '#1B6CA8';
 const PRIMARY_L = '#4AACCD';
-const GOLD = '#C9A84C';
+const GOLD      = '#C9A84C';
 
+// ── Animation Variants ──
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+};
+
+const fadeLeft: Variants = {
+  hidden: { opacity: 0, x: 40 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+};
+
+const scaleIn: Variants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+};
+
+const stagger: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
+// ── useInView hook ──
 function useInView(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold });
-    obs.observe(el);
-    return () => obs.disconnect();
+    obs.observe(el); return () => obs.disconnect();
   }, [threshold]);
   return { ref, inView };
 }
 
+// ── Counter ──
 function useCounter(target: number, inView: boolean, duration = 2000) {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -51,52 +73,67 @@ function useCounter(target: number, inView: boolean, duration = 2000) {
   return count;
 }
 
-function FadeIn({ children, delay = 0, className = '', style: extraStyle = {} }: {
-  children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties;
-}) {
-  const { ref, inView } = useInView();
+// ── Scroll Progress Bar ──
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
   return (
-    <div ref={ref} className={className} style={{
-      opacity: inView ? 1 : 0,
-      transform: inView ? 'translateY(0)' : 'translateY(32px)',
-      transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
-      ...extraStyle,
-    }}>{children}</div>
+    <motion.div
+      style={{
+        scaleX, transformOrigin: 'left',
+        position: 'fixed', top: 0, left: 0, right: 0,
+        height: 3, zIndex: 999,
+        background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_L}, ${GOLD})`,
+      }}
+    />
   );
 }
 
+// ── Animated Section ──
+function AnimSection({ children, className = '', style: extraStyle = {}, delay = 0, direction = 'up' }: {
+  children: React.ReactNode; className?: string; style?: React.CSSProperties; delay?: number; direction?: 'up' | 'left' | 'scale';
+}) {
+  const variant = direction === 'left' ? fadeLeft : direction === 'scale' ? scaleIn : fadeUp;
+  return (
+    <motion.div
+      className={className}
+      style={extraStyle}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ delay }}   
+      variants={variant}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ── Counter Stat ──
 function CounterStat({ target, suffix = '', label, icon, t }: {
   target: number; suffix?: string; label: string; icon: React.ReactNode; t: typeof THEMES.light;
 }) {
   const { ref, inView } = useInView(0.3);
   const count = useCounter(target, inView);
   return (
-    <div ref={ref} style={{
-      textAlign: 'center', padding: '32px 20px', borderRadius: 20,
-      background: t.card, border: `1px solid ${t.border}`,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-      transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
-      opacity: inView ? 1 : 0,
-      transform: inView ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
-    }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 60px ${PRIMARY}20`;
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px) scale(1.02)';
-        (e.currentTarget as HTMLElement).style.borderColor = `${PRIMARY}30`;
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+      animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+      whileHover={{ y: -8, scale: 1.03, boxShadow: `0 24px 60px ${PRIMARY}25` }}
+      style={{
+        textAlign: 'center', padding: '32px 20px', borderRadius: 20,
+        background: t.card, border: `1px solid ${t.border}`,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        transition: 'border-color 0.3s',
+        cursor: 'default',
       }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)';
-        (e.currentTarget as HTMLElement).style.borderColor = t.border;
-      }}>
-      <div style={{ width: 56, height: 56, borderRadius: 16, background: `${PRIMARY}12`, color: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-        {icon}
-      </div>
-      <div style={{ fontSize: 40, fontWeight: 900, color: PRIMARY, letterSpacing: '-2px', lineHeight: 1, marginBottom: 8 }}>
-        {count}{suffix}
-      </div>
+    >
+      <div style={{ width: 56, height: 56, borderRadius: 16, background: `${PRIMARY}12`, color: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>{icon}</div>
+      <div style={{ fontSize: 40, fontWeight: 900, color: PRIMARY, letterSpacing: '-2px', lineHeight: 1, marginBottom: 8 }}>{count}{suffix}</div>
       <div style={{ fontSize: 13, color: t.textMute, fontWeight: 500 }}>{label}</div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -117,176 +154,193 @@ const Icons = {
   upload:    <svg width="26" height="26" fill="none" stroke="white" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>,
   review:    <svg width="26" height="26" fill="none" stroke="white" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
   gift:      <svg width="26" height="26" fill="none" stroke="white" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>,
-  user:      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   chevron:   <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
   sun:       <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
   moon:      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
 };
 
+// ── Particles ──
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
     const particles: { x: number; y: number; r: number; dx: number; dy: number; o: number }[] = [];
-    for (let i = 0; i < 45; i++) {
-      particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 2 + 0.5, dx: (Math.random() - 0.5) * 0.3, dy: (Math.random() - 0.5) * 0.3, o: Math.random() * 0.35 + 0.1 });
-    }
+    for (let i = 0; i < 45; i++) particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 2 + 0.5, dx: (Math.random() - 0.5) * 0.3, dy: (Math.random() - 0.5) * 0.3, o: Math.random() * 0.35 + 0.1 });
     let frame: number;
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${p.o})`;
-        ctx.fill();
-        p.x += p.dx; p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-      });
+      particles.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = `rgba(255,255,255,${p.o})`; ctx.fill(); p.x += p.dx; p.y += p.dy; if (p.x < 0 || p.x > canvas.width) p.dx *= -1; if (p.y < 0 || p.y > canvas.height) p.dy *= -1; });
       frame = requestAnimationFrame(draw);
     };
-    draw();
-    return () => cancelAnimationFrame(frame);
+    draw(); return () => cancelAnimationFrame(frame);
   }, []);
   return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}/>;
 }
 
+// ── Section Title ──
 function SectionTitle({ label, labelColor = PRIMARY, title, titleGradient, sub, t }: {
   label: string; labelColor?: string; title: string; titleGradient?: string; sub?: string; t: typeof THEMES.light;
 }) {
   return (
-    <div style={{ textAlign: 'center', marginBottom: 52 }}>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 16,
-        background: `${labelColor}0F`, border: `1px solid ${labelColor}20`, borderRadius: 100, padding: '8px 20px' }}>
+    <AnimSection style={{ textAlign: 'center', marginBottom: 52 }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 16, background: `${labelColor}0F`, border: `1px solid ${labelColor}20`, borderRadius: 100, padding: '8px 20px' }}
+      >
         <div style={{ width: 6, height: 6, borderRadius: '50%', background: labelColor }}/>
         <span style={{ fontSize: 12, fontWeight: 700, color: labelColor, letterSpacing: '3px', textTransform: 'uppercase' as const }}>{label}</span>
         <div style={{ width: 6, height: 6, borderRadius: '50%', background: labelColor }}/>
-      </div>
-      <h2 style={{ fontSize: 42, fontWeight: 900, color: t.text, letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.1 }}>
-        {titleGradient ? (
-          <>
-            {title}{' '}
-            <span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{titleGradient}</span>
-          </>
-        ) : title}
+      </motion.div>
+      <h2 className="section-h2" style={{ fontSize: 42, fontWeight: 900, color: t.text, letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.1 }}>
+        {titleGradient
+          ? <>{title}{' '}<span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{titleGradient}</span></>
+          : title}
       </h2>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: sub ? 16 : 0 }}>
         <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to left, ${labelColor}, ${labelColor}60)` }}/>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}/>
+        <motion.div
+          animate={{ scale: [1, 1.4, 1] }}
+          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}
+        />
         <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to right, ${labelColor}, ${labelColor}60)` }}/>
       </div>
       {sub && <p style={{ fontSize: 15, color: t.textMute, maxWidth: 440, margin: '12px auto 0', lineHeight: 1.75 }}>{sub}</p>}
-    </div>
-  );
-}
-
-function DarkToggle({ dark, toggle, t }: { dark: boolean; toggle: () => void; t: typeof THEMES.light }) {
-  return (
-    <button onClick={toggle}
-      style={{ width: 42, height: 42, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.text, transition: 'all 0.25s', flexShrink: 0 }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = PRIMARY; (e.currentTarget as HTMLElement).style.color = PRIMARY; (e.currentTarget as HTMLElement).style.background = `${PRIMARY}08`; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = t.border; (e.currentTarget as HTMLElement).style.color = t.text; (e.currentTarget as HTMLElement).style.background = t.card; }}
-      title={dark ? 'الوضع الفاتح' : 'الوضع الداكن'}>
-      {dark ? Icons.sun : Icons.moon}
-    </button>
+    </AnimSection>
   );
 }
 
 export default function HomePage() {
   const router = useRouter();
-  const [scrolled, setScrolled] = useState(false);
-  const [dark, setDark] = useState(false);
+  const { dark, toggle } = useTheme();
+  const { lang, t: lx, dir } = useLang();
   const t = dark ? THEMES.dark : THEMES.light;
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   const TH = t.text;
 
+  // Parallax for hero image
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollY } = useScroll();
+  const heroImgY = useTransform(scrollY, [0, 600], [0, 120]);
+
   return (
-    <div dir="rtl" style={{ background: t.bg, minHeight: '100vh', transition: 'background 0.3s' }}
->
+    <div dir={dir} style={{ background: t.bg, minHeight: '100vh', transition: 'background 0.3s' }}>
 
-      {/* ══ NAVBAR ══ */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: scrolled ? t.navBg : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? `1px solid ${t.navBorder}` : '1px solid transparent', boxShadow: scrolled ? '0 1px 20px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.4s ease' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 14, flexShrink: 0, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: 20, boxShadow: `0 6px 18px ${PRIMARY}40` }}>غ</div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: scrolled ? t.text : 'white', letterSpacing: '-0.3px', transition: 'color 0.4s' }}>مؤسسة غزلان الخير</div>
-              <div style={{ fontSize: 10, letterSpacing: '0.5px', color: scrolled ? PRIMARY_L : 'rgba(255,255,255,0.7)', transition: 'color 0.4s' }}>Ghozlan Alkhair Foundation</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button onClick={() => router.push('/track')}
-              style={{ fontSize: 13, fontWeight: 500, color: scrolled ? t.textSub : 'rgba(255,255,255,0.85)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 16px', borderRadius: 10, transition: 'all 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = scrolled ? (dark ? 'rgba(255,255,255,0.08)' : '#F3F4F6') : 'rgba(255,255,255,0.12)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-              تتبع طلبي
-            </button>
-            <button onClick={() => router.push('/dashboard/login')}
-              style={{ fontSize: 13, fontWeight: 500, color: scrolled ? PRIMARY : 'rgba(255,255,255,0.9)', background: scrolled ? `${PRIMARY}10` : 'rgba(255,255,255,0.12)', border: `1.5px solid ${scrolled ? `${PRIMARY}25` : 'rgba(255,255,255,0.25)'}`, cursor: 'pointer', padding: '8px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.3s' }}>
-              {Icons.user} بوابة الموظفين
-            </button>
-            <button onClick={() => router.push('/apply')}
-              style={{ fontSize: 13, fontWeight: 700, color: 'white', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, border: 'none', cursor: 'pointer', padding: '10px 22px', borderRadius: 12, boxShadow: `0 4px 16px ${PRIMARY}50`, transition: 'all 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${PRIMARY}60`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px ${PRIMARY}50`; }}>
-              تقديم طلب مساعدة
-            </button>
-            <DarkToggle dark={dark} toggle={() => setDark(!dark)} t={t} />
+      {/* ── Scroll Progress ── */}
+      <ScrollProgress />
 
-          </div>
-        </div>
-      </nav>
+      {/* ── NAVBAR ── */}
+      <Navbar />
 
       {/* ══ HERO ══ */}
-      <section style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', marginTop: -68 }}>
-        <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1800&q=85" alt=""
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}/>
-        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, #0A1628f5 0%, ${PRIMARY}cc 55%, ${PRIMARY_L}80 100%)` }}/>
+      <section ref={heroRef} style={{ position: 'relative', height: '100vh', minHeight: 'calc(100vh - 68px)', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+        {/* Parallax Image */}
+        <motion.img
+          src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1800&q=85"
+          alt=""
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '110%',
+            objectFit: 'cover', objectPosition: 'center 30%',
+            y: heroImgY,
+          }}
+        />
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(5,15,35,0.88) 0%, rgba(5,15,35,0.55) 25%, rgba(5,15,35,0.3) 50%, transparent 70%), linear-gradient(135deg, rgba(10,22,40,0.9) 0%, ${PRIMARY}bb 55%, ${PRIMARY_L}70 100%)` }}/>
         <Particles />
-        <div style={{ position: 'absolute', top: -80, left: -80, width: 480, height: 480, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)', pointerEvents: 'none' }}/>
-        <div style={{ position: 'absolute', top: -40, left: -40, width: 320, height: 320, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.09)', pointerEvents: 'none' }}/>
-        <div style={{ position: 'absolute', bottom: 40, right: -60, width: 360, height: 360, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.05)', pointerEvents: 'none' }}/>
-        <div style={{ position: 'relative', zIndex: 10, maxWidth: 1120, margin: '0 auto', padding: '130px 24px 90px', width: '100%' }}>
-          <div style={{ maxWidth: 620, animation: 'fadeInUp 0.9s ease forwards' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 100, padding: '7px 18px', marginBottom: 28 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', display: 'inline-block', boxShadow: '0 0 0 3px rgba(74,222,128,0.3)' }}/>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.92)', fontWeight: 500, letterSpacing: '0.3px' }}>خدمة مجانية تماماً — نحن هنا لأجلك</span>
-            </div>
-            <h1 style={{ fontSize: 'clamp(44px, 6.5vw, 76px)', fontWeight: 900, color: 'white', lineHeight: 1.08, marginBottom: 22, letterSpacing: '-2px' }}>
-              يداً بيد
-              <span style={{ display: 'block', background: `linear-gradient(135deg, ${GOLD}, #FFE490)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>نبني مجتمعاً أفضل</span>
-            </h1>
-            <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.78)', lineHeight: 1.8, marginBottom: 44, maxWidth: 500 }}>
-              مؤسسة غزلان الخير تمد يد العون للأسر المحتاجة في مجالات العلاج الطبي والتعليم والدعم المعيشي
-            </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 44 }}>
-              <button onClick={() => router.push('/apply')}
-                style={{ height: 54, padding: '0 36px', background: 'white', color: PRIMARY, borderRadius: 14, border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,0.25)', transition: 'all 0.25s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.3)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 10px 30px rgba(0,0,0,0.25)'; }}>
-                قدّم طلب مساعدة الآن ←
-              </button>
-              <button onClick={() => router.push('/track')}
-                style={{ height: 54, padding: '0 30px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', color: 'white', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.25)', fontSize: 15, fontWeight: 500, cursor: 'pointer', transition: 'all 0.25s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}>
-                تتبع طلبي
-              </button>
-            </div>
-          
+
+        <div className="hero-content" style={{ position: 'relative', zIndex: 10, maxWidth: 1120, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
+          <div style={{ maxWidth: 620 }}>
+
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 100, padding: '7px 18px', marginBottom: 28 }}
+            >
+              <motion.span
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', display: 'inline-block', boxShadow: '0 0 0 3px rgba(74,222,128,0.3)' }}
+              />
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.95)', fontWeight: 500 }}>{lx.home.hero_badge}</span>
+            </motion.div>
+
+            {/* Title */}
+            <motion.h1
+              className="hero-title"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              style={{ fontSize: 'clamp(38px, 6vw, 76px)', fontWeight: 900, color: 'white', lineHeight: 1.3, marginBottom: 22, letterSpacing: '-2px', textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
+            >
+              {lx.home.hero_title_1}
+              <motion.span
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                style={{ display: 'block', background: `linear-gradient(135deg, ${GOLD}, #FFE490)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' ,paddingBottom: '8px' }}
+              >
+                {lx.home.hero_title_2}
+              </motion.span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.7 }}
+              style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', lineHeight: 1.8, marginBottom: 40, maxWidth: 500, textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}
+            >
+              {lx.home.hero_sub}
+            </motion.p>
+
+            {/* Buttons */}
+            <motion.div
+              className="hero-buttons"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.9 }}
+              style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 44 }}
+            >
+              <motion.button
+                whileHover={{ scale: 1.04, boxShadow: '0 16px 40px rgba(0,0,0,0.4)' }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => router.push('/apply')}
+                style={{ height: 52, padding: '0 32px', background: 'white', color: PRIMARY, borderRadius: 14, border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}
+              >
+                {lx.home.apply_btn}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.2)' }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => router.push('/track')}
+                style={{ height: 52, padding: '0 28px', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', color: 'white', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.3)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}
+              >
+                {lx.home.track_btn}
+              </motion.button>
+            </motion.div>
           </div>
         </div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          style={{ position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
+        >
+          <div style={{ width: 24, height: 40, borderRadius: 12, border: '2px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '6px 0' }}>
+            <motion.div
+              animate={{ y: [0, 12, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ width: 4, height: 8, borderRadius: 2, background: 'rgba(255,255,255,0.7)' }}
+            />
+          </div>
+        </motion.div>
+
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
           <svg viewBox="0 0 1440 60" fill={t.bg} style={{ display: 'block' }}>
             <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z"/>
@@ -295,408 +349,580 @@ export default function HomePage() {
       </section>
 
       {/* ══ STATS ══ */}
-      <section style={{ background: t.bg, padding: '88px 24px' }}>
+      <section style={{ background: t.bg, padding: '72px 24px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        <FadeIn style={{ textAlign: 'center', marginBottom: 52 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 16,
-            background: `${PRIMARY}0F`, border: `1px solid ${PRIMARY}20`, borderRadius: 100, padding: '8px 20px' }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
-            <span style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: '3px', textTransform: 'uppercase' as const }}>بالأرقام</span>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
-          </div>
-          <h2 style={{ fontSize: 42, fontWeight: 900, color: TH, letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.1 }}>
-            إنجازاتنا
-            <span style={{ display: 'inline-block', marginRight: 10, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>تتحدث</span>
-          </h2>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
-            <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to left, ${PRIMARY}, ${PRIMARY_L})` }}/>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}/>
-            <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_L})` }}/>
-          </div>
-          <p style={{ fontSize: 15, color: t.textMute, maxWidth: 380, margin: '0 auto', lineHeight: 1.7 }}>أرقام حقيقية تعكس حجم تأثيرنا في المجتمع</p>
-        </FadeIn>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+          <AnimSection style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 16, background: `${PRIMARY}0F`, border: `1px solid ${PRIMARY}20`, borderRadius: 100, padding: '8px 20px' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
+              <span style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: '3px', textTransform: 'uppercase' as const }}>{lang === 'ar' ? 'بالأرقام' : 'In Numbers'}</span>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
+            </div>
+            <h2 className="section-h2" style={{ fontSize: 42, fontWeight: 900, color: TH, letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.1 }}>
+              {lang === 'ar' ? <>إنجازاتنا <span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>تتحدث</span></> : <>Our <span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Impact</span></>}
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to left, ${PRIMARY}, ${PRIMARY_L})` }}/>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}/>
+              <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_L})` }}/>
+            </div>
+            <p style={{ fontSize: 15, color: t.textMute, maxWidth: 380, margin: '0 auto', lineHeight: 1.7 }}>
+              {lang === 'ar' ? 'أرقام حقيقية تعكس حجم تأثيرنا في المجتمع' : 'Real numbers reflecting our community impact'}
+            </p>
+          </AnimSection>
+          <motion.div
+            className="stats-grid"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}
+            variants={stagger}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
             {[
-              { target: 500, suffix: '+', label: 'أسرة استفادت',    icon: Icons.people },
-              { target: 3,   suffix: '+', label: 'سنوات من العطاء', icon: Icons.shield },
-              { target: 3,   suffix: '',  label: 'مجالات مساعدة',   icon: Icons.heart },
-              { target: 98,  suffix: '٪', label: 'رضا المستفيدين',  icon: Icons.star },
+              { target: 500, suffix: '+', label: lx.home.stats_families,   icon: Icons.people },
+              { target: 3,   suffix: '+', label: lx.home.stats_years,      icon: Icons.shield },
+              { target: 1200,   suffix: '',  label: lx.home.stats_requests,   icon: Icons.heart },
+              { target: 150,  suffix: '٪', label: lx.home.stats_volunteers, icon: Icons.star },
             ].map((s, i) => <CounterStat key={i} {...s} t={t}/>)}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ══ من نحن ══ */}
-      <section style={{ background: t.bg2, padding: '96px 24px' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
-          <FadeIn>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 18,
-            background: `${PRIMARY}0F`, border: `1px solid ${PRIMARY}20`, borderRadius: 100, padding: '8px 20px' }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
-            <span style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: '3px', textTransform: 'uppercase' as const }}>من نحن</span>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
-          </div>
-          <h2 style={{ fontSize: 42, fontWeight: 900, color: TH, lineHeight: 1.1, marginBottom: 10, letterSpacing: '-1px' }}>
-            مؤسسة إنسانية{' '}
-            <span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              بقلب يحب الخير
-            </span>
-          </h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22 }}>
-            <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to left, ${PRIMARY}, ${PRIMARY_L})` }}/>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}/>
-            <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_L})` }}/>
-          </div>
-          <p style={{ fontSize: 15, color: t.textSub, lineHeight: 1.85, marginBottom: 16 }}>تأسست مؤسسة غزلان الخير بهدف تقديم يد العون للأسر المحتاجة، وبناء جسر من الأمل بين المانحين والمستفيدين في المجتمع.</p>
-          <p style={{ fontSize: 15, color: t.textSub, lineHeight: 1.85, marginBottom: 32 }}>نعمل بشفافية واحترافية لضمان وصول المساعدة لمن يحتاجها فعلاً، لأن كل إنسان يستحق حياة كريمة.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {[
-              { title: 'رسالتنا', desc: 'تمكين الأسر من حياة كريمة', color: PRIMARY },
-              { title: 'رؤيتنا', desc: 'مجتمع يدعم بعضه البعض',     color: '#059669' },
-              { title: 'قيمنا',  desc: 'الشفافية والأمانة',            color: GOLD },
-              { title: 'هدفنا',  desc: 'الوصول لكل محتاج',            color: PRIMARY_L },
-            ].map(v => (
-              <div key={v.title} style={{ padding: '14px 16px', borderRadius: 12, background: `${v.color}${dark ? '18' : '08'}`, border: `1.5px solid ${v.color}${dark ? '30' : '18'}`, transition: 'all 0.2s', cursor: 'default' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: v.color, marginBottom: 4 }}>{v.title}</div>
-                <div style={{ fontSize: 12, color: t.textMute, lineHeight: 1.5 }}>{v.desc}</div>
-              </div>
-            ))}
-          </div>
-        </FadeIn>
-          <FadeIn delay={0.2} style={{ position: 'relative' }}>
-            <img src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=700&q=85" alt="فريق العمل"
-              style={{ borderRadius: 24, width: '100%', height: 400, objectFit: 'cover', boxShadow: `0 32px 80px ${PRIMARY}25`, display: 'block' }}/>
-            <div style={{ position: 'absolute', bottom: -18, right: -18, background: t.card, borderRadius: 16, padding: '14px 20px', boxShadow: dark ? '0 12px 40px rgba(0,0,0,0.4)' : '0 12px 40px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', gap: 12, border: `2px solid ${t.border}` }}>
+      <section style={{ background: t.bg2, padding: '80px 24px' }}>
+        <div className="about-grid" style={{ maxWidth: 1120, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
+          <AnimSection>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 18, background: `${PRIMARY}0F`, border: `1px solid ${PRIMARY}20`, borderRadius: 100, padding: '8px 20px' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
+              <span style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: '3px', textTransform: 'uppercase' as const }}>{lang === 'ar' ? 'من نحن' : 'About Us'}</span>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
+            </div>
+            <h2 className="section-h2" style={{ fontSize: 42, fontWeight: 900, color: TH, lineHeight: 1.1, marginBottom: 10, letterSpacing: '-1px' }}>
+              {lang === 'ar' ? <>مؤسسة إنسانية{' '}<span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>بقلب يحب الخير</span></> : <>A Foundation with a <span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Heart of Gold</span></>}
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22 }}>
+              <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to left, ${PRIMARY}, ${PRIMARY_L})` }}/>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}/>
+              <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_L})` }}/>
+            </div>
+            <p style={{ fontSize: 15, color: t.textSub, lineHeight: 1.85, marginBottom: 16 }}>
+              {lang === 'ar' ? 'تأسست مؤسسة غزلان الخير بهدف تقديم يد العون للأسر المحتاجة، وبناء جسر من الأمل بين المانحين والمستفيدين في المجتمع.' : 'Ghozlan Alkhair Foundation was established to extend a helping hand to families in need, building a bridge of hope between donors and beneficiaries in the community.'}
+            </p>
+            <p style={{ fontSize: 15, color: t.textSub, lineHeight: 1.85, marginBottom: 32 }}>
+              {lang === 'ar' ? 'نعمل بشفافية واحترافية لضمان وصول المساعدة لمن يحتاجها فعلاً، لأن كل إنسان يستحق حياة كريمة.' : 'We work with transparency and professionalism to ensure assistance reaches those who truly need it, because every person deserves a dignified life.'}
+            </p>
+            <div className="about-values" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {[
+                { title: lang === 'ar' ? 'رسالتنا' : 'Mission', desc: lang === 'ar' ? 'تمكين الأسر من حياة كريمة' : 'Empowering families to live with dignity', color: PRIMARY },
+                { title: lang === 'ar' ? 'رؤيتنا' : 'Vision',  desc: lang === 'ar' ? 'مجتمع يدعم بعضه البعض' : 'A community that supports each other', color: '#059669' },
+                { title: lang === 'ar' ? 'قيمنا'  : 'Values',  desc: lang === 'ar' ? 'الشفافية والأمانة' : 'Transparency and integrity', color: GOLD },
+                { title: lang === 'ar' ? 'هدفنا'  : 'Goal',    desc: lang === 'ar' ? 'الوصول لكل محتاج' : 'Reaching every person in need', color: PRIMARY_L },
+              ].map((v, i) => (
+                <motion.div
+                  key={v.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  whileHover={{ scale: 1.03, y: -3 }}
+                  style={{ padding: '14px 16px', borderRadius: 12, background: `${v.color}${dark ? '18' : '08'}`, border: `1.5px solid ${v.color}${dark ? '30' : '18'}`, cursor: 'default' }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 800, color: v.color, marginBottom: 4 }}>{v.title}</div>
+                  <div style={{ fontSize: 12, color: t.textMute, lineHeight: 1.5 }}>{v.desc}</div>
+                </motion.div>
+              ))}
+            </div>
+          </AnimSection>
+          <AnimSection delay={0.2} direction="left" className="about-img" style={{ position: 'relative' }}>
+            <motion.img
+              src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=700&q=85"
+              alt="فريق العمل"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.4 }}
+              style={{ borderRadius: 24, width: '100%', height: 400, objectFit: 'cover', boxShadow: `0 32px 80px ${PRIMARY}25`, display: 'block' }}
+            />
+            <motion.div
+              initial={{ opacity: 0, x: 20, y: 20 }}
+              whileInView={{ opacity: 1, x: 0, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              style={{ position: 'absolute', bottom: -18, right: -18, background: t.card, borderRadius: 16, padding: '14px 20px', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', gap: 12, border: `2px solid ${t.border}` }}
+            >
               <div style={{ width: 40, height: 40, borderRadius: 10, background: `${PRIMARY}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: PRIMARY }}>{Icons.check}</div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: TH }}>+٣ سنوات</div>
-                <div style={{ fontSize: 11, color: t.textMute }}>من الخدمة الإنسانية</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: TH }}>{lang === 'ar' ? '+٣ سنوات' : '+3 Years'}</div>
+                <div style={{ fontSize: 11, color: t.textMute }}>{lang === 'ar' ? 'من الخدمة الإنسانية' : 'of Humanitarian Service'}</div>
               </div>
-            </div>
-          </FadeIn>
+            </motion.div>
+          </AnimSection>
         </div>
       </section>
 
       {/* ══ SERVICES ══ */}
-      <section style={{ background: t.bg, padding: '96px 24px' }}>
+      <section style={{ background: t.bg, padding: '80px 24px' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <FadeIn>
-            <SectionTitle label="خدماتنا" title="مجالات المساعدة" sub="نقدم الدعم الإنساني في ثلاثة مجالات أساسية تمس حياة الإنسان اليومية" t={t}/>
-          </FadeIn>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <SectionTitle
+            label={lang === 'ar' ? 'خدماتنا' : 'Our Services'}
+            title={lang === 'ar' ? 'مجالات المساعدة' : 'Areas of Assistance'}
+            sub={lang === 'ar' ? 'نقدم الدعم الإنساني في ثلاثة مجالات أساسية' : 'We provide humanitarian support in three key areas'}
+            t={t}
+          />
+          <div className="services-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { img: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=600&q=80', title: 'العلاج الطبي',  desc: 'تغطية تكاليف العمليات والأدوية والعلاج للحالات التي لا تستطيع تحمّل النفقات', color: PRIMARY,   icon: Icons.medical },
-              { img: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80', title: 'التعليم',       desc: 'دعم الطلاب المحتاجين بالمستلزمات الدراسية والرسوم المدرسية وبيئة تعليم مناسبة', color: '#0F6E56', icon: Icons.education },
-              { img: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&q=80', title: 'الدعم المعيشي', desc: 'مساعدة الأسر في تأمين احتياجاتها الأساسية من غذاء وسكن ومستلزمات الحياة', color: GOLD,      icon: Icons.support },
-            ].map((s, i) => (
-              <FadeIn key={s.title} delay={i * 0.1}>
-                <div style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${t.border}`, background: t.card, transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)', cursor: 'pointer' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 24px 64px ${s.color}25`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-8px)'; (e.currentTarget as HTMLElement).style.borderColor = `${s.color}35`; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.borderColor = t.border; }}>
-                  <div style={{ height: 210, overflow: 'hidden', position: 'relative' }}>
-                    <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s ease' }}
-                      onMouseEnter={e => (e.target as HTMLElement).style.transform = 'scale(1.08)'}
-                      onMouseLeave={e => (e.target as HTMLElement).style.transform = 'scale(1)'}/>
-                    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to top, ${s.color}65, transparent)` }}/>
-                    <div style={{ position: 'absolute', bottom: 14, right: 14, width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{s.icon}</div>
-                  </div>
-                  <div style={{ padding: '24px 26px 28px' }}>
-                    <div style={{ width: 32, height: 3, borderRadius: 2, background: s.color, marginBottom: 14 }}/>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: TH, marginBottom: 10, letterSpacing: '-0.3px' }}>{s.title}</h3>
-                    <p style={{ fontSize: 13, color: t.textMute, lineHeight: 1.75, marginBottom: 18 }}>{s.desc}</p>
-                    <button onClick={() => router.push('/apply')}
-                      style={{ fontSize: 13, fontWeight: 700, color: s.color, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6, transition: 'gap 0.2s' }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.gap = '10px'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.gap = '6px'}>
-                      تقدّم بطلب {Icons.arrow}
-                    </button>
-                  </div>
+             { img: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=600&q=80', title: lx.home.service_medical_title, desc: lx.home.service_medical_desc, color: PRIMARY, icon: Icons.medical },
+             { img: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80', title: lx.home.service_edu_title,     desc: lx.home.service_edu_desc,     color: '#0F6E56', icon: Icons.education },
+             { img: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&q=80', title: lx.home.service_fin_title,     desc: lx.home.service_fin_desc,     color: GOLD,    icon: Icons.support },].map((s, i) => (
+              <motion.div
+                key={s.title}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.6 }}
+                whileHover={{ y: -8, boxShadow: `0 24px 60px ${s.color}20` }}
+                style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${t.border}`, background: t.card }}
+              >
+                <div style={{ height: 200, overflow: 'hidden', position: 'relative' }}>
+                  <motion.img
+                    src={s.img} alt={s.title}
+                    whileHover={{ scale: 1.08 }}
+                    transition={{ duration: 0.5 }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to top, ${s.color}65, transparent)` }}/>
+                  <div style={{ position: 'absolute', bottom: 14, right: 14, width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{s.icon}</div>
                 </div>
-              </FadeIn>
+                <div style={{ padding: '22px 24px 26px' }}>
+                  <div style={{ width: 32, height: 3, borderRadius: 2, background: s.color, marginBottom: 12 }}/>
+                  <h3 style={{ fontSize: 17, fontWeight: 800, color: TH, marginBottom: 8 }}>{s.title}</h3>
+                  <p style={{ fontSize: 13, color: t.textMute, lineHeight: 1.75, marginBottom: 16 }}>{s.desc}</p>
+                  <motion.button
+                    whileHover={{ gap: 10 }}
+                    onClick={() => router.push('/apply')}
+                    style={{ fontSize: 13, fontWeight: 700, color: s.color, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    {lang === 'ar' ? 'تقدّم بطلب' : 'Apply Now'} {Icons.arrow}
+                  </motion.button>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* ══ HOW IT WORKS ══ */}
-      <section style={{ background: t.bg2, padding: '96px 24px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -80, right: -80, width: 360, height: 360, borderRadius: '50%', background: `${PRIMARY}${dark ? '08' : '04'}`, pointerEvents: 'none' }}/>
+      <section style={{ background: t.bg2, padding: '80px 24px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <FadeIn>
-            <SectionTitle label="آلية العمل" labelColor={GOLD} title="كيف تقدم طلبك؟" sub="أربع خطوات بسيطة للحصول على المساعدة" t={t}/>
-          </FadeIn>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, position: 'relative' }}>
-            <div style={{ position: 'absolute', top: 33, right: '14%', left: '14%', height: 1, background: `linear-gradient(to left, transparent, ${PRIMARY}25, ${PRIMARY}25, transparent)`, pointerEvents: 'none' }}/>
+          <SectionTitle
+            label={lang === 'ar' ? 'آلية العمل' : 'How It Works'}
+            labelColor={GOLD}
+            title={lang === 'ar' ? 'كيف تقدم طلبك؟' : 'How to Apply?'}
+            sub={lang === 'ar' ? 'أربع خطوات بسيطة للحصول على المساعدة' : 'Four simple steps to get assistance'}
+            t={t}
+          />
+          <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, position: 'relative' }}>
+            <div className="steps-line" style={{ position: 'absolute', top: 33, right: '14%', left: '14%', height: 1, background: `linear-gradient(to left, transparent, ${PRIMARY}25, transparent)`, pointerEvents: 'none' }}/>
             {[
-              { num: '٠١', title: 'عبّي النموذج',   desc: 'أدخل بياناتك الشخصية واحتياجك بالتفصيل', color: PRIMARY, icon: Icons.form },
-              { num: '٠٢', title: 'ارفع الوثائق',   desc: 'أضف المستندات الداعمة لطلبك',             color: GOLD,    icon: Icons.upload },
-              { num: '٠٣', title: 'انتظر المراجعة', desc: 'يراجع فريقنا طلبك خلال ٣-٧ أيام',        color: PRIMARY, icon: Icons.review },
-              { num: '٠٤', title: 'تلقّ المساعدة',  desc: 'نتواصل معك مباشرة لتقديم الدعم',          color: GOLD,    icon: Icons.gift },
-            ].map((item, i) => (
-              <FadeIn key={item.num} delay={i * 0.12}>
-                <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-                  <div style={{ width: 66, height: 66, borderRadius: 20, background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', boxShadow: `0 10px 30px ${item.color}45`, transition: 'transform 0.3s', cursor: 'default' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.12) rotate(-5deg)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
-                    {item.icon}
-                  </div>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: item.color, letterSpacing: '1.5px', marginBottom: 6 }}>{item.num}</div>
-                  <h3 style={{ fontSize: 15, fontWeight: 800, color: TH, marginBottom: 8, letterSpacing: '-0.2px' }}>{item.title}</h3>
-                  <p style={{ fontSize: 12.5, color: t.textMute, lineHeight: 1.7 }}>{item.desc}</p>
-                </div>
-              </FadeIn>
+              { num: '01', title: lx.home.step1_title, desc: lx.home.step1_desc, color: PRIMARY, icon: Icons.form },
+              { num: '02', title: lx.home.step2_title, desc: lx.home.step2_desc, color: GOLD,    icon: Icons.upload },
+              { num: '03', title: lx.home.step3_title, desc: lx.home.step3_desc, color: PRIMARY, icon: Icons.review },
+              { num: '04', title: lx.home.step4_title, desc: lx.home.step4_desc, color: GOLD,    icon: Icons.gift },    
+               ].map((item, i) => (
+              <motion.div
+                key={item.num}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.6 }}
+                style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  style={{ width: 66, height: 66, borderRadius: 20, background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', boxShadow: `0 10px 30px ${item.color}45` }}
+                >
+                  {item.icon}
+                </motion.div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: item.color, letterSpacing: '1.5px', marginBottom: 6 ,fontFamily: 'sans-serif' }}>{item.num}</div>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: TH, marginBottom: 8 }}>{item.title}</h3>
+                <p style={{ fontSize: 12.5, color: t.textMute, lineHeight: 1.7 }}>{item.desc}</p>
+              </motion.div>
             ))}
           </div>
-          <FadeIn style={{ textAlign: 'center', marginTop: 52 }}>
-            <button onClick={() => router.push('/apply')}
-              style={{ height: 52, padding: '0 40px', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', borderRadius: 14, border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: `0 8px 28px ${PRIMARY}40`, transition: 'all 0.25s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 14px 36px ${PRIMARY}50`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 28px ${PRIMARY}40`; }}>
-              ابدأ الآن — قدّم طلبك مجاناً
-            </button>
-          </FadeIn>
+          <AnimSection style={{ textAlign: 'center', marginTop: 48 }}>
+            <motion.button
+              whileHover={{ scale: 1.04, boxShadow: `0 14px 40px ${PRIMARY}55` }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => router.push('/apply')}
+              style={{ height: 52, padding: '0 40px', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', borderRadius: 14, border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: `0 8px 28px ${PRIMARY}40` }}
+            >
+              {lang === 'ar' ? 'ابدأ الآن — قدّم طلبك مجاناً' : 'Start Now — Apply for Free'}
+            </motion.button>
+          </AnimSection>
         </div>
       </section>
 
       {/* ══ TESTIMONIALS ══ */}
-      <section style={{ background: t.bg, padding: '96px 24px' }}>
+      <section style={{ background: t.bg, padding: '80px 24px' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <FadeIn>
-            <SectionTitle label="قصص نجاح" labelColor={GOLD} title="ماذا يقول المستفيدون؟" sub="قصص حقيقية من أسر استفادت من دعم المؤسسة" t={t}/>
-          </FadeIn>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 22 }}>
+          <SectionTitle
+            label={lang === 'ar' ? 'قصص نجاح' : 'Success Stories'}
+            labelColor={GOLD}
+            title={lang === 'ar' ? 'ماذا يقول المستفيدون؟' : 'What Beneficiaries Say'}
+            sub={lang === 'ar' ? 'قصص حقيقية من أسر استفادت من دعم المؤسسة' : 'Real stories from families who benefited from foundation support'}
+            t={t}
+          />
+          <div className="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 22 }}>
             {[
-              { text: 'ساعدتنا المؤسسة في تغطية تكاليف عملية ابني، لا أجد كلمات تعبر عن امتناني لهذا الفريق الرائع.', name: 'أم محمد', region: 'حلب',  type: 'علاج طبي',  color: PRIMARY },
-              { text: 'بفضل دعم المؤسسة تمكنت ابنتي من إكمال دراستها والحصول على شهادتها، شكراً لكل من ساهم.', name: 'أبو سارة', region: 'إدلب', type: 'تعليم',     color: '#0F6E56' },
-              { text: 'في أصعب الظروف وجدنا يداً حانية تمدّ لنا العون، المؤسسة كانت نعمة حقيقية لأسرتنا.',     name: 'أم عمر',  region: 'درعا', type: 'دعم معيشي', color: GOLD },
+              { text: lang === 'ar' ? 'ساعدتنا المؤسسة في تغطية تكاليف عملية ابني، لا أجد كلمات تعبر عن امتناني لهذا الفريق الرائع.' : 'The foundation helped us cover my son\'s surgery costs. I cannot find words to express my gratitude to this wonderful team.', name: lang === 'ar' ? 'أم محمد' : 'Um Mohammad', region: lang === 'ar' ? 'حلب' : 'Aleppo', type: lang === 'ar' ? 'علاج طبي' : 'Medical', color: PRIMARY },
+              { text: lang === 'ar' ? 'بفضل دعم المؤسسة تمكنت ابنتي من إكمال دراستها والحصول على شهادتها، شكراً لكل من ساهم.' : 'Thanks to the foundation\'s support, my daughter was able to complete her studies and get her degree.', name: lang === 'ar' ? 'أبو سارة' : 'Abu Sara', region: lang === 'ar' ? 'إدلب' : 'Idlib', type: lang === 'ar' ? 'تعليم' : 'Education', color: '#0F6E56' },
+              { text: lang === 'ar' ? 'في أصعب الظروف وجدنا يداً حانية تمدّ لنا العون، المؤسسة كانت نعمة حقيقية لأسرتنا.' : 'In the hardest times we found a caring hand extending help to us. The foundation was a true blessing for our family.', name: lang === 'ar' ? 'أم عمر' : 'Um Omar', region: lang === 'ar' ? 'درعا' : 'Daraa', type: lang === 'ar' ? 'دعم معيشي' : 'Financial', color: GOLD },
             ].map((t2, i) => (
-              <FadeIn key={i} delay={i * 0.1}>
-                <div style={{
-                    padding: '30px', borderRadius: 20, background: t.card,
-                    borderTop: `3px solid ${t2.color}`,
-                    borderRight: `1px solid ${t.border}`,
-                    borderBottom: `1px solid ${t.border}`,
-                    borderLeft: `1px solid ${t.border}`,
-                    transition: 'all 0.3s', cursor: 'default',
-                  }}
-                    onMouseEnter={e => {
-                      const el = e.currentTarget as HTMLElement;
-                      el.style.boxShadow = `0 20px 60px ${t2.color}18`;
-                      el.style.transform = 'translateY(-4px)';
-                      el.style.borderRightColor = `${t2.color}30`;
-                      el.style.borderBottomColor = `${t2.color}30`;
-                      el.style.borderLeftColor = `${t2.color}30`;
-                    }}
-                    onMouseLeave={e => {
-                      const el = e.currentTarget as HTMLElement;
-                      el.style.boxShadow = 'none';
-                      el.style.transform = 'none';
-                      el.style.borderRightColor = t.border;
-                      el.style.borderBottomColor = t.border;
-                      el.style.borderLeftColor = t.border;
-                    }}>
-                  <div style={{ fontSize: 56, lineHeight: 1, color: `${t2.color}20`, fontFamily: 'Georgia, serif', marginBottom: 14, marginTop: -6 }}>"</div>
-                  <p style={{ fontSize: 14, color: t.textSub, lineHeight: 1.85, marginBottom: 22, fontStyle: 'italic' }}>{t2.text}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: '50%', background: `linear-gradient(135deg, ${t2.color}, ${t2.color}70)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>{t2.name.charAt(0)}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: TH }}>{t2.name}</div>
-                      <div style={{ fontSize: 11, color: t.textMute }}>{t2.region}</div>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: t2.color, background: `${t2.color}12`, padding: '4px 10px', borderRadius: 8 }}>{t2.type}</span>
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.6 }}
+                whileHover={{ y: -6, boxShadow: `0 20px 50px ${t2.color}18` }}
+                style={{ padding: '28px', borderRadius: 20, background: t.card, borderTop: `3px solid ${t2.color}`, border: `1px solid ${t.border}`, cursor: 'default' }}
+              >
+                <div style={{ fontSize: 52, lineHeight: 1, color: `${t2.color}20`, fontFamily: 'Georgia,serif', marginBottom: 12 }}>"</div>
+                <p style={{ fontSize: 14, color: t.textSub, lineHeight: 1.85, marginBottom: 20, fontStyle: 'italic' }}>{t2.text}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg, ${t2.color}, ${t2.color}70)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 15, fontWeight: 800, flexShrink: 0 }}>{t2.name.charAt(0)}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: TH }}>{t2.name}</div>
+                    <div style={{ fontSize: 11, color: t.textMute }}>{t2.region}</div>
                   </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t2.color, background: `${t2.color}12`, padding: '4px 10px', borderRadius: 8 }}>{t2.type}</span>
                 </div>
-              </FadeIn>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══ PARTNERS ══ */}
-      <section style={{ background: t.bg2, padding: '72px 24px' }}>
+      {/* ══ TEAM & VOLUNTEER ══ */}
+      <section style={{ background: t.bg2, padding: '64px 24px' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <FadeIn>
-            <SectionTitle label="شركاؤنا" title="داعمونا وشركاؤنا" sub="نفخر بشراكتنا مع جهات تشاركنا قيم العطاء والإنسانية" t={t}/>
-          </FadeIn>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            {[
-              { name: 'منظمة الأمم المتحدة', abbr: 'UN', color: PRIMARY },
-              { name: 'الهلال الأحمر',       abbr: 'RC', color: '#DC2626' },
-              { name: 'منظمة إنسانية دولية', abbr: 'IO', color: '#059669' },
-              { name: 'جهة داعمة محلية',     abbr: 'LD', color: GOLD },
-            ].map((p, i) => (
-              <FadeIn key={p.name} delay={i * 0.08}>
-                <div style={{ background: t.card, borderRadius: 16, padding: '28px 20px', textAlign: 'center', border: `1px solid ${t.border}`, transition: 'all 0.25s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 12px 36px ${p.color}20`; (e.currentTarget as HTMLElement).style.borderColor = `${p.color}30`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = t.border; (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
-                  <div style={{ width: 54, height: 54, borderRadius: 14, background: `${p.color}${dark ? '20' : '0F'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 16, fontWeight: 900, color: p.color, border: `1.5px solid ${p.color}25` }}>{p.abbr}</div>
-                  <div style={{ fontSize: 12, color: t.textMute, fontWeight: 600 }}>{p.name}</div>
-                </div>
-              </FadeIn>
-            ))}
+          <SectionTitle
+            label={lang === 'ar' ? 'فريقنا' : 'Our Team'}
+            title={lang === 'ar' ? 'من يقف خلف غزلان الخير' : 'The People Behind Ghozlan Alkhair'}
+            sub={lang === 'ar' ? 'فريق متطوع متكامل يعمل بصمت لخدمة أهلنا في سوريا' : 'A dedicated volunteer team working quietly to serve our people in Syria'}
+            t={t}
+          />
+
+          <div className="partners-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
+          {[
+        {
+          role: lang === 'ar' ? 'الإدارة والتنسيق' : 'Management',
+          color: PRIMARY,
+          desc: lang === 'ar' ? 'يشرفون على سير العمل واتخاذ القرار' : 'Oversee operations and decisions',
+          icon: (
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/>
+            </svg>
+          ),
+        },
+        {
+          role: lang === 'ar' ? 'فريق المراجعة' : 'Review Team',
+          color: PRIMARY_L,
+          desc: lang === 'ar' ? 'يراجعون الطلبات ويتحققون من البيانات' : 'Review and verify applications',
+          icon: (
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+          ),
+        },
+        {
+          role: lang === 'ar' ? 'المتابعة الميدانية' : 'Field Follow-up',
+          color: GOLD,
+          desc: lang === 'ar' ? 'يتابعون الحالات ويتحققون من التسليم' : 'Follow up cases and verify delivery',
+          icon: (
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          ),
+        },
+        {
+          role: lang === 'ar' ? 'الدعم التقني' : 'Tech Support',
+          color: '#059669',
+          desc: lang === 'ar' ? 'يديرون المنصة ويضمنون سيرها' : 'Manage the platform and ensure it runs',
+          icon: (
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <path d="M8 21h8M12 17v4"/>
+            </svg>
+          ),
+        },
+      ].map((item, i) => (
+        <motion.div key={item.role}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: i * 0.1, duration: 0.5 }}
+          whileHover={{ y: -5 }}
+          style={{ background: t.card, borderRadius: 16, padding: '28px 20px', textAlign: 'center', border: `1px solid ${item.color}20` }}
+        >
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: `${item.color}12`, border: `1.5px solid ${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: item.color }}>
+            {item.icon}
           </div>
-        </div>
-      </section>
+          <div style={{ fontSize: 13, fontWeight: 700, color: t.text, marginBottom: 8 }}>{item.role}</div>
+          <div style={{ fontSize: 11, color: t.textMute, lineHeight: 1.6 }}>{item.desc}</div>
+        </motion.div>
+      ))}
+    </div>
+
+    {/* Volunteer CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{ borderRadius: 20, padding: '40px 32px', background: `linear-gradient(135deg, ${PRIMARY}10, ${PRIMARY_L}08)`, border: `1px solid ${PRIMARY}20`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' as const }}
+        >
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: t.text, marginBottom: 8 }}>
+              {lang === 'ar' ? 'هل تريد أن تكون جزءاً من الفريق؟' : 'Want to be part of the team?'}
+            </div>
+            <div style={{ fontSize: 13, color: t.textMute, lineHeight: 1.7, maxWidth: 480 }}>
+              {lang === 'ar'
+                ? 'نرحب بكل من يريد المساهمة في خدمة أهلنا — سواء بوقته أو خبرته أو مهاراته'
+                : 'We welcome anyone who wants to contribute — whether with their time, expertise, or skills'}
+            </div>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.04, boxShadow: `0 8px 28px ${PRIMARY}40` }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => router.push('/volunteer')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 14, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0 }}
+          >
+            <svg width="16" height="16" fill="none" stroke="white" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            {lang === 'ar' ? 'انضم كمتطوع' : 'Join as Volunteer'}
+          </motion.button>
+        </motion.div>
+
+      </div>
+    </section>
 
       {/* ══ FAQ ══ */}
-      <section style={{ background: t.bg, padding: '96px 24px' }}>
+      <section style={{ background: t.bg, padding: '80px 24px' }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <FadeIn>
-            <SectionTitle label="الأسئلة الشائعة" title="أسئلة شائعة" sub="إجابات على أكثر الأسئلة شيوعاً" t={t}/>
-          </FadeIn>
+          <SectionTitle
+            label={lang === 'ar' ? 'الأسئلة الشائعة' : 'FAQ'}
+            title={lang === 'ar' ? 'أسئلة شائعة' : 'Frequently Asked Questions'}
+            sub={lang === 'ar' ? 'إجابات على أكثر الأسئلة شيوعاً' : 'Answers to the most common questions'}
+            t={t}
+          />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { q: 'من يحق له تقديم طلب مساعدة؟',  a: 'كل أسرة أو فرد يعيش ظروفاً صعبة في أي محافظة سورية، بصرف النظر عن الجنس أو العمر.' },
-              { q: 'كم يستغرق البت في الطلب؟',      a: 'يراجع فريقنا كل طلب خلال ٣-٧ أيام عمل، وقد تختلف المدة حسب اكتمال الوثائق.' },
-              { q: 'ما الوثائق المطلوبة مع الطلب؟', a: 'صورة هوية، وثائق تثبت الحاجة كالتقرير الطبي أو وضع السكن، وأي مستندات داعمة أخرى.' },
-              { q: 'هل يمكن تقديم أكثر من طلب؟',    a: 'يمكن تقديم طلب واحد لكل نوع مساعدة. بعد البت في الطلب الحالي يمكن تقديم طلب جديد.' },
-              { q: 'كيف أعرف حالة طلبي؟',           a: 'يمكنك تتبع طلبك في أي وقت من خلال صفحة التتبع برقم المرجع أو رقم هاتفك.' },
-            ].map((faq, i) => (
-              <FadeIn key={i} delay={i * 0.04}>
-                <details style={{ borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, overflow: 'hidden', transition: 'all 0.2s' }}>
-                  <summary style={{ padding: '18px 22px', cursor: 'pointer', fontWeight: 700, fontSize: 14, color: TH, display: 'flex', alignItems: 'center', justifyContent: 'space-between', listStyle: 'none', userSelect: 'none', transition: 'background 0.2s' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = t.bg2}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
+            {lx.home.faq.map((faq, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+              >
+                <details style={{ borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, overflow: 'hidden' }}>
+                  <summary style={{ padding: '16px 20px', cursor: 'pointer', fontWeight: 700, fontSize: 14, color: TH, display: 'flex', alignItems: 'center', justifyContent: 'space-between', listStyle: 'none', userSelect: 'none' }}>
                     {faq.q}
                     <span style={{ color: t.textMute, flexShrink: 0, marginRight: 12 }}>{Icons.chevron}</span>
                   </summary>
-                  <div style={{ padding: '8px 22px 18px', fontSize: 14, color: t.textSub, lineHeight: 1.8, borderTop: `1px solid ${t.border}` }}>
-                    {faq.a}
-                  </div>
+                  <div style={{ padding: '8px 20px 16px', fontSize: 14, color: t.textSub, lineHeight: 1.8, borderTop: `1px solid ${t.border}` }}>{faq.a}</div>
                 </details>
-              </FadeIn>
+              </motion.div>
             ))}
+           
           </div>
         </div>
       </section>
 
       {/* ══ CONTACT ══ */}
-      <section style={{ background: t.bg2, padding: '96px 24px' }}>
+      <section style={{ background: t.bg2, padding: '80px 24px', position: 'relative', zIndex: 0, overflow: 'hidden' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <FadeIn>
-            <SectionTitle label="تواصل معنا" title="نحن هنا لمساعدتك" sub="تواصل معنا عبر أي قناة تناسبك" t={t}/>
-          </FadeIn>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <SectionTitle
+            label={lang === 'ar' ? 'تواصل معنا' : 'Contact Us'}
+            title={lang === 'ar' ? 'نحن هنا لمساعدتك' : 'We Are Here to Help'}
+            sub={lang === 'ar' ? 'تواصل معنا عبر أي قناة تناسبك' : 'Contact us through any channel that suits you'}
+            t={t}
+          />
+          <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {[
-              { title: 'واتساب',             desc: 'تواصل معنا مباشرة', value: '+963 XX XXX XXXX', color: '#25D366', icon: Icons.phone },
-              { title: 'البريد الإلكتروني', desc: 'أرسل لنا استفسارك', value: 'info@ghozlan.org',  color: PRIMARY,   icon: Icons.mail },
-              { title: 'ساعات العمل',        desc: 'أحد — خميس',        value: '٩ ص — ٤ م',        color: GOLD,      icon: Icons.clock },
+              { title: lang === 'ar' ? 'واتساب' : 'WhatsApp', desc: lang === 'ar' ? 'تواصل معنا مباشرة' : 'Contact us directly', value: '+963 XX XXX XXXX', color: '#25D366', icon: Icons.phone },
+              { title: lang === 'ar' ? 'البريد الإلكتروني' : 'Email', desc: lang === 'ar' ? 'أرسل لنا استفسارك' : 'Send us your inquiry', value: 'info@ghozlan.org', color: PRIMARY, icon: Icons.mail },
+              { title: lang === 'ar' ? 'ساعات العمل' : 'Working Hours', desc: lang === 'ar' ? 'أحد — خميس' : 'Sun — Thu', value: lang === 'ar' ? '٩ ص — ٤ م' : '9 AM — 4 PM', color: GOLD, icon: Icons.clock },
             ].map((c, i) => (
-              <FadeIn key={c.title} delay={i * 0.1}>
-                <div style={{ background: t.card, borderRadius: 20, padding: '36px 28px', textAlign: 'center', border: `1px solid ${t.border}`, transition: 'all 0.3s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 16px 48px ${c.color}20`; (e.currentTarget as HTMLElement).style.borderColor = `${c.color}30`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = t.border; (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
-                  <div style={{ width: 54, height: 54, borderRadius: 14, background: `${c.color}${dark ? '20' : '10'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', color: c.color }}>{c.icon}</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: TH, marginBottom: 5, letterSpacing: '-0.2px' }}>{c.title}</div>
-                  <div style={{ fontSize: 12, color: t.textMute, marginBottom: 12 }}>{c.desc}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: c.color }}>{c.value}</div>
-                </div>
-              </FadeIn>
+              <motion.div
+                key={c.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.6 }}
+                whileHover={{ y: -6, boxShadow: `0 20px 50px ${c.color}18` }}
+                style={{ background: t.card, borderRadius: 20, padding: '32px 24px', textAlign: 'center', border: `1px solid ${t.border}`, cursor: 'default' }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 10 }}
+                  style={{ width: 54, height: 54, borderRadius: 14, background: `${c.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: c.color }}
+                >
+                  {c.icon}
+                </motion.div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: TH, marginBottom: 5 }}>{c.title}</div>
+                <div style={{ fontSize: 12, color: t.textMute, marginBottom: 10 }}>{c.desc}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: c.color }}>{c.value}</div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* ══ CTA ══ */}
-      <section style={{ position: 'relative', overflow: 'hidden', padding: '96px 24px' }}>
-        <img src="https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=1600&q=80" alt=""
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}/>
-        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, #0A1628f5, ${PRIMARY}d5)` }}/>
-        <Particles />
-        <FadeIn style={{ position: 'relative', zIndex: 10, maxWidth: 560, margin: '0 auto', textAlign: 'center', color: 'white' }}>
+            <section style={{ 
+        position: 'relative', overflow: 'hidden', 
+        padding: '80px 24px',
+        minHeight: 500, 
+        zIndex: 1, isolation: 'isolate',
+        marginTop: 0,
+      }}>
+        <motion.img
+          src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1600&q=85"
+
+          alt=""
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            width: '100%', height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center center',
+          }}
+        />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(135deg, rgba(5,15,35,0.88), rgba(27,108,168,0.82))',
+        }}/>
+        <AnimSection style={{ position: 'relative', zIndex: 10, maxWidth: 560, margin: '0 auto', textAlign: 'center', color: 'white' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 100, padding: '6px 18px', marginBottom: 22 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }}/>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>نستقبل الطلبات الآن</span>
+            <motion.span animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }}/>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{lang === 'ar' ? 'نستقبل الطلبات الآن' : 'Now Accepting Applications'}</span>
           </div>
-          <h2 style={{ fontSize: 44, fontWeight: 900, marginBottom: 8, letterSpacing: '-1px', lineHeight: 1.1 }}>هل تحتاج إلى مساعدة؟</h2>
-          <div style={{ width: 48, height: 4, borderRadius: 2, background: `linear-gradient(to left, ${GOLD}, #FFE490)`, margin: '0 auto 20px' }}/>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', marginBottom: 40, lineHeight: 1.75 }}>لا تتردد في التقديم — فريقنا يراجع كل طلب بعناية واهتمام بالغ</p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => router.push('/apply')}
-              style={{ height: 54, padding: '0 40px', background: 'white', color: PRIMARY, borderRadius: 14, border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 32px rgba(0,0,0,0.25)', transition: 'all 0.25s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 18px 48px rgba(0,0,0,0.35)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 10px 32px rgba(0,0,0,0.25)'; }}>
-              قدّم طلبك الآن ←
-            </button>
-            <button onClick={() => router.push('/track')}
-              style={{ height: 54, padding: '0 30px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', color: 'white', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.25)', fontSize: 15, fontWeight: 500, cursor: 'pointer', transition: 'all 0.25s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}>
-              تتبع طلبك
-            </button>
+          <h2 className="cta-title" style={{ fontSize: 44, fontWeight: 900, marginBottom: 8, letterSpacing: '-1px', lineHeight: 1.1 }}>
+            {lang === 'ar' ? 'هل تحتاج إلى مساعدة؟' : 'Do You Need Assistance?'}
+          </h2>
+          <div style={{ width: 48, height: 4, borderRadius: 2, background: `linear-gradient(to left, ${GOLD}, #FFE490)`, margin: '0 auto 18px' }}/>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.72)', marginBottom: 36, lineHeight: 1.75 }}>
+            {lang === 'ar' ? 'لا تتردد في التقديم — فريقنا يراجع كل طلب بعناية' : 'Don\'t hesitate to apply — our team reviews every request carefully'}
+          </p>
+          <div className="cta-buttons" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} onClick={() => router.push('/apply')}
+              style={{ height: 52, padding: '0 36px', background: 'white', color: PRIMARY, borderRadius: 14, border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 32px rgba(0,0,0,0.25)' }}>
+              {lang === 'ar' ? 'قدّم طلبك الآن ←' : 'Apply Now →'}
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.2)' }} whileTap={{ scale: 0.97 }} onClick={() => router.push('/track')}
+              style={{ height: 52, padding: '0 28px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', color: 'white', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.25)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}>
+              {lang === 'ar' ? 'تتبع طلبك' : 'Track Your Request'}
+            </motion.button>
           </div>
-        </FadeIn>
+        </AnimSection>
       </section>
 
       {/* ══ FOOTER ══ */}
-      <footer style={{ background: t.footerBg, padding: '72px 24px 36px' }}>
+      <footer style={{ background: dark ? '#010409' : '#0A1628', padding: '52px 20px 28px', transition: 'background 0.3s' }} dir={dir}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 56, marginBottom: 52 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 14, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: 20 }}>غ</div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>مؤسسة غزلان الخير</div>
-                  <div style={{ fontSize: 10, color: PRIMARY_L, letterSpacing: '0.5px' }}>Ghozlan Alkhair Foundation</div>
-                </div>
+          <div style={{ textAlign: 'center', marginBottom: 44 }}>
+            <div onClick={() => router.push('/')} style={{ display: 'inline-flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 14 }}>
+              <img src="/g-logo.png" alt="مؤسسة غزلان الخير" className="footer-logo-img"
+                style={{ width: 80, height: 80, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(74,172,205,0.4))' }}/>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{lang === 'ar' ? 'مؤسسة غزلان الخير' : 'Ghozlan Alkhair Foundation'}</div>
+                <div style={{ fontSize: 10, color: PRIMARY_L, letterSpacing: '0.4px' }}>{lang === 'ar' ? 'Ghozlan Alkhair Foundation' : 'مؤسسة غزلان الخير'}</div>
               </div>
-              <p style={{ fontSize: 13, color: t.footerText, lineHeight: 1.85, maxWidth: 280 }}>منظمة إنسانية تهدف إلى تقديم الدعم للأسر المحتاجة وبناء مجتمع متماسك قائم على التكافل والمحبة.</p>
             </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: '#6B7280', marginBottom: 20, letterSpacing: '2px', textTransform: 'uppercase' as const }}>الخدمات</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[{ label: 'تقديم طلب مساعدة', path: '/apply' }, { label: 'تتبع طلب', path: '/track' }].map(l => (
+            <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.85, maxWidth: 300, margin: '0 auto 20px' }}>{lx.footer.desc}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <div style={{ width: 48, height: 1, background: 'rgba(201,168,76,0.25)' }}/>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, opacity: 0.5 }}/>
+              <div style={{ width: 48, height: 1, background: 'rgba(201,168,76,0.25)' }}/>
+            </div>
+          </div>
+
+          <div className="footer-links" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, maxWidth: 560, margin: '0 auto 40px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: '#4B5563', marginBottom: 14, letterSpacing: '2px', textTransform: 'uppercase' as const }}>{lx.footer.services}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+                {[{ label: lx.footer.apply, path: '/apply' }, { label: lx.footer.track, path: '/track' }].map(l => (
                   <button key={l.label} onClick={() => router.push(l.path)}
-                    style={{ fontSize: 13, color: '#4B5563', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right', padding: 0, transition: 'color 0.15s' }}
-                    onMouseEnter={e => (e.target as HTMLElement).style.color = 'white'}
-                    onMouseLeave={e => (e.target as HTMLElement).style.color = '#4B5563'}>
-                    {l.label}
-                  </button>
+                    style={{ fontSize: 13, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
+                  >{l.label}</button>
                 ))}
                 <button onClick={() => router.push('/dashboard/login')}
-                  style={{ fontSize: 12, color: PRIMARY_L, background: `${PRIMARY_L}12`, border: `1px solid ${PRIMARY_L}30`, borderRadius: 8, padding: '7px 14px', cursor: 'pointer', width: 'fit-content', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { (e.target as HTMLElement).style.background = `${PRIMARY_L}22`; }}
-                  onMouseLeave={e => { (e.target as HTMLElement).style.background = `${PRIMARY_L}12`; }}>
-                  بوابة الموظفين
-                </button>
+                  style={{ fontSize: 12, color: PRIMARY_L, background: `${PRIMARY_L}10`, border: `1px solid ${PRIMARY_L}25`, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500 }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY_L}22`; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY_L}10`; }}
+                >{lx.footer.employees}</button>
               </div>
             </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: '#6B7280', marginBottom: 20, letterSpacing: '2px', textTransform: 'uppercase' as const }}>التواصل</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  { icon: Icons.mail,  text: 'info@ghozlan.org' },
-                  { icon: Icons.phone, text: 'واتساب متاح' },
-                  { icon: Icons.clock, text: 'أحد — خميس، ٩ص — ٤م' },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#4B5563' }}>
-                    <span style={{ color: '#374151' }}>{item.icon}</span>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: '#4B5563', marginBottom: 14, letterSpacing: '2px', textTransform: 'uppercase' as const }}>{lx.footer.contact}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+                {[{ icon: Icons.mail, text: lx.footer.email }, { icon: Icons.phone, text: lx.footer.whatsapp }, { icon: Icons.clock, text: lx.footer.hours }].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#9CA3AF' }}>
+                    <span style={{ color: '#6B7280', flexShrink: 0 }}>{item.icon}</span>
                     {item.text}
                   </div>
                 ))}
               </div>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontSize: 12, color: '#374151' }}>© ٢٠٢٦ مؤسسة غزلان الخير — جميع الحقوق محفوظة</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <p style={{ fontSize: 12, color: '#2D3748' }}>Ghozlan Alkhair Foundation</p>
-              <button onClick={() => setDark(!dark)}
-                style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280', transition: 'all 0.2s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'white'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6B7280'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}>
-                {dark ? Icons.sun : Icons.moon}
-              </button>
-            </div>
+
+          <div className="footer-bottom">
+            <p style={{ fontSize: 12, color: '#4B5563', margin: 0 }}>{lx.footer.rights}</p>
+            <button onClick={toggle} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 10, border: `1.5px solid ${dark ? 'rgba(74,172,205,0.35)' : 'rgba(255,255,255,0.15)'}`, background: dark ? 'rgba(74,172,205,0.1)' : 'rgba(255,255,255,0.06)', cursor: 'pointer', color: dark ? PRIMARY_L : '#9CA3AF', fontSize: 12, fontWeight: 600, transition: 'all 0.22s' }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = dark ? 'rgba(74,172,205,0.18)' : 'rgba(255,255,255,0.12)'; el.style.color = 'white'; }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = dark ? 'rgba(74,172,205,0.1)' : 'rgba(255,255,255,0.06)'; el.style.color = dark ? PRIMARY_L : '#9CA3AF'; }}
+            >
+              {dark ? Icons.sun : Icons.moon}
+              <span>{dark ? lx.footer.light : lx.footer.dark}</span>
+            </button>
           </div>
         </div>
+
+        <style>{`
+          @media (max-width: 640px) { .footer-logo-img { width: 62px !important; height: 62px !important; } }
+          .footer-bottom { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+          @media (max-width: 640px) { .footer-bottom { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 14px !important; } }
+          @media (max-width: 480px) { .footer-links { gap: 20px !important; } }
+          @media (max-width: 340px) { .footer-links { grid-template-columns: 1fr !important; } }
+        `}</style>
       </footer>
 
       <style>{`
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
         details summary::-webkit-details-marker { display: none; }
+        @media (max-width: 768px) {
+          .hero-content { padding: 110px 20px 60px !important; }
+          .hero-title { font-size: 36px !important; letter-spacing: -1px !important; }
+          .hero-buttons { flex-direction: column !important; }
+          .hero-buttons button { width: 100% !important; text-align: center !important; }
+          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+          .about-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .about-img  { display: none !important; }
+          .about-values { grid-template-columns: 1fr 1fr !important; }
+          .services-grid { grid-template-columns: 1fr !important; }
+          .steps-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 24px !important; }
+          .steps-line { display: none !important; }
+          .testimonials-grid { grid-template-columns: 1fr !important; }
+          .partners-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .contact-grid { grid-template-columns: 1fr !important; }
+          .section-h2 { font-size: 28px !important; }
+          .cta-title { font-size: 30px !important; }
+          .cta-buttons { flex-direction: column !important; align-items: center !important; }
+          .cta-buttons button { width: 100% !important; max-width: 320px !important; }
+        }
+        @media (max-width: 480px) {
+          .steps-grid { grid-template-columns: 1fr !important; }
+          .hero-title { font-size: 30px !important; }
+        }
       `}</style>
     </div>
   );

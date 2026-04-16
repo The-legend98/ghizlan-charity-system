@@ -38,15 +38,19 @@ class NoteController extends Controller
     }
 
     // حذف ملاحظة
-    public function destroy(Request $http, $requestId, $noteId)
-    {
-        $note = Note::where('request_id', $requestId)
-            ->where('id', $noteId)
-            ->where('user_id', $http->user()->id)
-            ->firstOrFail();
+   public function destroy(Request $http, $requestId, $noteId)
+{
+    $note = Note::where('request_id', $requestId)
+        ->where('id', $noteId)
+        ->firstOrFail();
 
-        $note->delete();
-
-        return response()->json(['message' => 'تم حذف الملاحظة']);
+    // المدير يحذف أي ملاحظة، الموظف يحذف ملاحظاته فقط
+    if ($http->user()->role !== 'manager' && $note->user_id !== $http->user()->id) {
+        return response()->json(['message' => 'غير مصرح'], 403);
     }
+
+    $note->delete();
+
+    return response()->json(['message' => 'تم حذف الملاحظة']);
+}
 }

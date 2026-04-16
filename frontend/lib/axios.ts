@@ -6,6 +6,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
+    'ngrok-skip-browser-warning': 'true',
+    'cf-access-bypass': 'true',
   },
   withCredentials: false,
 });

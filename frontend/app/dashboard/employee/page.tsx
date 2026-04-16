@@ -167,42 +167,50 @@ export default function EmployeeDashboard() {
       <BgPattern />
 
       {/* Navbar */}
-      <nav style={{
-        background: 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: `1px solid ${PRIMARY}20`,
-        position: 'sticky', top: 0, zIndex: 50,
-      }}>
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-              style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>غ</div>
-            <div>
-              <div className="text-sm font-bold text-gray-900">لوحة الموظف</div>
-              <div className="text-xs" style={{ color: PRIMARY_L }}>مؤسسة غزلان الخير</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <NotificationBell />
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2"
-              style={{ background: `${PRIMARY}10`, border: `1px solid ${PRIMARY}20` }}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
-                {user?.name?.charAt(0)}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-gray-900">{user?.name}</div>
-                <div className="text-xs" style={{ color: PRIMARY_L }}>موظف</div>
-              </div>
-            </div>
-            <button onClick={handleLogout}
-              className="text-xs px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-all border border-red-100">
-              خروج
-            </button>
+    <nav style={{
+      background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)',
+      borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50,
+    }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <img src="/g-logo.png" alt="غزلان الخير"
+            style={{ width: 38, height: 38, objectFit: 'contain' }}
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.2px', lineHeight: 1.2 }}>لوحة الموظف</div>
+            <div style={{ fontSize: 8, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
           </div>
         </div>
-      </nav>
 
+        {/* Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <NotificationBell />
+
+          {/* User Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 10, background: `${PRIMARY}08`, border: `1px solid ${PRIMARY}20` }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+              {user?.name?.charAt(0)}
+            </div>
+            <div className="req-hide-mobile">
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
+              <div style={{ fontSize: 9, color: PRIMARY_L }}>موظف</div>
+            </div>
+          </div>
+
+          {/* Logout */}
+          <button onClick={handleLogout}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '7px 13px', cursor: 'pointer', transition: 'all 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}>
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            خروج
+          </button>
+        </div>
+      </div>
+    </nav>
       <div className="max-w-6xl mx-auto px-6 py-8" style={{ position: 'relative', zIndex: 1 }}>
 
         {/* Welcome Card */}
@@ -216,7 +224,7 @@ export default function EmployeeDashboard() {
               <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse"></span>
               طلباتك المسندة إليك
             </div>
-            <h1 className="text-xl font-bold mb-1">مرحباً، {user?.name} 👋</h1>
+            <h1 className="text-xl font-bold mb-1">مرحباً، {user?.name} </h1>
             <p className="text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>هيك ملخص طلباتك اليوم</p>
           </div>
         </div>
@@ -298,6 +306,65 @@ export default function EmployeeDashboard() {
             )}
           </div>
         </div>
+
+        {/* ── تنبيهات الطلبات ── */}
+      {(() => {
+        const staleRequests = requests.filter(r => {
+          const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+          return ['new','reviewing','needs_info'].includes(r.status) && days >= 5;
+        });
+       const followUpToday = requests.filter(r => {
+        const doc = r.case_documentation;
+        if (!doc?.needs_follow_up || !doc?.follow_up_date) return false;
+        if (!['pending','scheduled','rescheduled'].includes(doc.follow_up_status)) return false;
+        const diff = Math.floor((new Date(doc.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        return diff <= 1;
+      });
+        if (!staleRequests.length && !followUpToday.length) return null;
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+            {staleRequests.length > 0 && (
+              <div style={{ borderRadius: 14, padding: '12px 16px', background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <svg width="18" height="18" fill="none" stroke="#D97706" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 6 }}>
+                    ⚠️ {staleRequests.length} طلب بدون تحديث أكثر من 5 أيام
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {staleRequests.map(r => {
+                      const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+                      return (
+                        <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
+                          style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#FEF9C3', border: '1px solid #FDE68A', color: '#92400E', cursor: 'pointer', fontWeight: 600 }}>
+                          {r.full_name} — {days} أيام
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+            {followUpToday.length > 0 && (
+              <div style={{ borderRadius: 14, padding: '12px 16px', background: '#EDE9FE', border: '1px solid #DDD6FE', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <svg width="18" height="18" fill="none" stroke="#7C3AED" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', marginBottom: 6 }}>
+                    📅 {followUpToday.length} موعد متابعة اليوم أو غداً
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {followUpToday.map(r => (
+                      <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
+                        style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#5B21B6', cursor: 'pointer', fontWeight: 600 }}>
+                        {r.full_name} — {new Date(r.follow_up_date).toLocaleDateString('ar-SA')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
         {/* Table */}
         <div className="rounded-2xl overflow-hidden"

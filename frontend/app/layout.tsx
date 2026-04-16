@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Almarai } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from './providers/ThemeProvider';
+import { LangProvider } from './providers/LangProvider';
+
+
 
 const almarai = Almarai({
   subsets: ['arabic'],
@@ -21,7 +25,11 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className="h-full">
       <body className={`${almarai.className} min-h-full flex flex-col`}>
-        {children}
+          <ThemeProvider>
+          <LangProvider>
+            {children}
+          </LangProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

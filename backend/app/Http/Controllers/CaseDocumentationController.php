@@ -136,15 +136,17 @@ class CaseDocumentationController extends Controller
     public function updateFollowUp(Request $http, $id)
     {
         $http->validate([
-            'follow_up_status' => 'required|in:pending,done',
-            'follow_up_notes'  => 'nullable|string',
-        ]);
+        'follow_up_status' => 'required|in:pending,done,rescheduled,completed',
+        'follow_up_notes'  => 'nullable|string',
+        'follow_up_date'   => 'nullable|date',
+    ]);
 
-        $doc = CaseDocumentation::findOrFail($id);
-        $doc->update([
-            'follow_up_status' => $http->follow_up_status,
-            'follow_up_notes'  => $http->follow_up_notes,
-        ]);
+    $doc = CaseDocumentation::findOrFail($id);
+    $doc->update([
+        'follow_up_status' => $http->follow_up_status,
+        'follow_up_notes'  => $http->follow_up_notes,
+        'follow_up_date'   => $http->follow_up_date ?? $doc->follow_up_date,
+    ]);
 
         return response()->json(['message' => 'تم تحديث المتابعة', 'data' => $doc]);
     }
