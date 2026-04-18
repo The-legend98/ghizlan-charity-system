@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useLang } from '@/app/providers/LangProvider';
+import { useTheme } from '@/app/providers/ThemeProvider';
 import api from '@/lib/axios';
 
 const PRIMARY   = '#1B6CA8';
@@ -21,13 +22,9 @@ const regions = [
 ];
 
 export default function VolunteerPage() {
-  const router = useRouter();
- const { lang, dir } = useLang();
-const [dark, setDark] = useState(false);
-
-useEffect(() => {
-setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-}, []);
+  const router   = useRouter();
+  const { lang, dir } = useLang();
+  const { dark } = useTheme();
 
   const t = dark ? {
     bg:       '#0D1B2A',
@@ -60,9 +57,12 @@ setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
     skills:         '',
     availability:   '',
   });
-  const [loading,   setLoading]   = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error,     setError]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState('');
+
+  // ✅ submitted في ref — لا يتأثر بأي re-render من useLang أو useTheme
+  const submittedRef              = useRef(false);
+  const [, forceUpdate]           = useState(0);
 
   const tx = {
     hero:         lang === 'ar' ? 'انضم إلى فريق غزلان الخير' : 'Join the Ghozlan Alkhair Team',
@@ -141,7 +141,8 @@ setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
     setLoading(true); setError('');
     try {
       await api.post('/volunteer', form);
-      setSubmitted(true);
+      submittedRef.current = true;
+      forceUpdate(n => n + 1);
     } catch {
       setError(tx.errGeneral);
     } finally {
@@ -199,17 +200,18 @@ setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
       {/* Content */}
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 20px 60px' }}>
 
-        {submitted ? (
+        {submittedRef.current ? (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 200 }}
             style={{ background: t.card, borderRadius: 20, padding: '48px 32px', textAlign: 'center', border: `1px solid ${dark ? 'rgba(74,222,128,0.2)' : '#A7F3D0'}`, boxShadow: '0 4px 24px rgba(5,150,105,0.1)' }}>
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300, delay: 0.1 }}
-              style={{ width: 72, height: 72, borderRadius: '50%', background: dark ? 'rgba(5,150,105,0.15)' : '#D1FAE5', border: `3px solid ${dark ? 'rgba(74,222,128,0.3)' : '#6EE7B7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <svg width="32" height="32" fill="none" stroke="#059669" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
-            </motion.div>
+            <div style={{ width: 72, height: 72, borderRadius: '50%', background: dark ? 'rgba(5,150,105,0.15)' : '#D1FAE5', border: `3px solid ${dark ? 'rgba(74,222,128,0.3)' : '#6EE7B7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <svg width="32" height="32" fill="none" stroke={dark ? '#4ADE80' : '#059669'} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
             <h2 style={{ fontSize: 22, fontWeight: 900, color: t.text, marginBottom: 10 }}>{tx.successTitle}</h2>
             <p style={{ fontSize: 13, color: t.textMute, marginBottom: 28, lineHeight: 1.7 }}>{tx.successSub}</p>
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={() => router.push('/')}
+              onClick={() => { submittedRef.current = false; window.location.href = '/'; }}
               style={{ padding: '11px 28px', borderRadius: 12, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
               {tx.backHome}
             </motion.button>

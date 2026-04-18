@@ -138,60 +138,69 @@ function RequestsPageContent() {
 
      {/* ══ NAVBAR ══ */}
       <nav style={{
-        background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)',
-        borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50,
-      }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+  background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)',
+  borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50,
+}}>
+  <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
 
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flexShrink: 0 }}
-            onClick={() => router.push(user?.role === 'manager' ? '/dashboard/manager' : '/dashboard/requests')}>
-            <img src="/g-logo.png" alt="غزلان الخير"
-              style={{ width: 38, height: 38, objectFit: 'contain' }}
-              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.2px', lineHeight: 1.2 }}>إدارة الطلبات</div>
-              <div style={{ fontSize: 8, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {user?.role === 'manager' && (
-              <button onClick={() => router.push('/dashboard/manager')} className="req-hide-mobile"
-                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '7px 13px', borderRadius: 10, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, color: '#4B5563', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}12`; (e.currentTarget as HTMLElement).style.color = PRIMARY; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}06`; (e.currentTarget as HTMLElement).style.color = '#4B5563'; }}>
-                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2"/></svg>
-                لوحة المدير
-              </button>
-            )}
-
-            <NotificationBell />
-
-            {/* User Badge */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 10, background: user?.role === 'manager' ? `${GOLD}15` : `${PRIMARY}08`, border: `1px solid ${user?.role === 'manager' ? GOLD + '30' : PRIMARY + '20'}` }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${user?.role === 'manager' ? GOLD : PRIMARY}, ${user?.role === 'manager' ? '#E8C96A' : PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-                {user?.name?.charAt(0)}
-              </div>
-              <div className="req-hide-mobile">
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
-                <div style={{ fontSize: 9, color: user?.role === 'manager' ? GOLD : PRIMARY_L }}>{user?.role === 'manager' ? 'مدير' : 'موظف'}</div>
-              </div>
-            </div>
-
-            {/* Logout */}
-            <button onClick={handleLogout}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '7px 13px', cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}>
-              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-              <span className="req-hide-mobile">خروج</span>
-            </button>
-          </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      {user?.role === 'manager' && (
+        <button onClick={() => router.push('/dashboard/manager')}
+          style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${PRIMARY}20`, background: `${PRIMARY}06`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}12`; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}06`; }}>
+          <svg width="15" height="15" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+        onClick={() => router.push(user?.role === 'manager' ? '/dashboard/manager' : '/dashboard/requests')}>
+        <img src="/g-logo.png" alt="غزلان الخير"
+          style={{ width: 38, height: 38, objectFit: 'contain' }}
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.2px', lineHeight: 1.2 }}>إدارة الطلبات</div>
+          <div style={{ fontSize: 8, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
         </div>
-      </nav>
+      </div>
+    </div>
+
+    {/* Actions */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {user?.role === 'manager' && (
+        <button onClick={() => router.push('/dashboard/manager')} className="req-hide-mobile"
+          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '7px 13px', borderRadius: 10, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, color: '#4B5563', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}12`; (e.currentTarget as HTMLElement).style.color = PRIMARY; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}06`; (e.currentTarget as HTMLElement).style.color = '#4B5563'; }}>
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2"/></svg>
+          لوحة المدير
+        </button>
+      )}
+
+      <NotificationBell />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 10, background: user?.role === 'manager' ? `${GOLD}15` : `${PRIMARY}08`, border: `1px solid ${user?.role === 'manager' ? GOLD + '30' : PRIMARY + '20'}` }}>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${user?.role === 'manager' ? GOLD : PRIMARY}, ${user?.role === 'manager' ? '#E8C96A' : PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+          {user?.name?.charAt(0)}
+        </div>
+        <div className="req-hide-mobile">
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
+          <div style={{ fontSize: 9, color: user?.role === 'manager' ? GOLD : PRIMARY_L }}>{user?.role === 'manager' ? 'مدير' : 'موظف'}</div>
+        </div>
+      </div>
+
+      <button onClick={handleLogout}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '7px 13px', cursor: 'pointer', transition: 'all 0.2s' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}>
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <span className="req-hide-mobile">خروج</span>
+      </button>
+    </div>
+
+  </div>
+</nav>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '16px', position: 'relative', zIndex: 1 }}>
 

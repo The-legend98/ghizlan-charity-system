@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { motion, useScroll, useTransform, useSpring, Variants } from 'framer-motion';
+import { motion, useScroll, useSpring, Variants } from 'framer-motion';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import { useLang } from '@/app/providers/LangProvider';
 import Navbar from '@/components/Navbar';
@@ -24,27 +24,44 @@ const PRIMARY   = '#1B6CA8';
 const PRIMARY_L = '#4AACCD';
 const GOLD      = '#C9A84C';
 
+// ── Hero Slides ──
+const heroSlides = [
+   {
+    src: 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=1800&fit=crop&q=80&auto=format',
+    position: 'center 40%'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=1800&fit=crop&q=80&auto=format',
+    position: 'center 50%'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1526976668912-1a811878dd37?w=1800&fit=crop&q=80&auto=format',
+    position: 'center 40%'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1800&fit=crop&q=80&auto=format',
+    position: 'center 45%'
+  },
+];
+
 // ── Animation Variants ──
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
 };
-
 const fadeLeft: Variants = {
   hidden: { opacity: 0, x: 40 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.7, ease: 'easeOut' } },
 };
-
 const scaleIn: Variants = {
   hidden: { opacity: 0, scale: 0.9 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
 };
-
 const stagger: Variants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.1 } },
 };
-// ── useInView hook ──
+
 function useInView(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
@@ -56,7 +73,6 @@ function useInView(threshold = 0.15) {
   return { ref, inView };
 }
 
-// ── Counter ──
 function useCounter(target: number, inView: boolean, duration = 2000) {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -73,63 +89,33 @@ function useCounter(target: number, inView: boolean, duration = 2000) {
   return count;
 }
 
-// ── Scroll Progress Bar ──
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
   return (
-    <motion.div
-      style={{
-        scaleX, transformOrigin: 'left',
-        position: 'fixed', top: 0, left: 0, right: 0,
-        height: 3, zIndex: 999,
-        background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_L}, ${GOLD})`,
-      }}
-    />
+    <motion.div style={{ scaleX, transformOrigin: 'left', position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 999, background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_L}, ${GOLD})` }}/>
   );
 }
 
-// ── Animated Section ──
 function AnimSection({ children, className = '', style: extraStyle = {}, delay = 0, direction = 'up' }: {
   children: React.ReactNode; className?: string; style?: React.CSSProperties; delay?: number; direction?: 'up' | 'left' | 'scale';
 }) {
   const variant = direction === 'left' ? fadeLeft : direction === 'scale' ? scaleIn : fadeUp;
   return (
-    <motion.div
-      className={className}
-      style={extraStyle}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ delay }}   
-      variants={variant}
-    >
+    <motion.div className={className} style={extraStyle} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} transition={{ delay }} variants={variant}>
       {children}
     </motion.div>
   );
 }
 
-// ── Counter Stat ──
 function CounterStat({ target, suffix = '', label, icon, t }: {
   target: number; suffix?: string; label: string; icon: React.ReactNode; t: typeof THEMES.light;
 }) {
   const { ref, inView } = useInView(0.3);
   const count = useCounter(target, inView);
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
-      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-      whileHover={{ y: -8, scale: 1.03, boxShadow: `0 24px 60px ${PRIMARY}25` }}
-      style={{
-        textAlign: 'center', padding: '32px 20px', borderRadius: 20,
-        background: t.card, border: `1px solid ${t.border}`,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-        transition: 'border-color 0.3s',
-        cursor: 'default',
-      }}
-    >
+    <motion.div ref={ref} initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}} transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }} whileHover={{ y: -8, scale: 1.03, boxShadow: `0 24px 60px ${PRIMARY}25` }}
+      style={{ textAlign: 'center', padding: '32px 20px', borderRadius: 20, background: t.card, border: `1px solid ${t.border}`, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', transition: 'border-color 0.3s', cursor: 'default' }}>
       <div style={{ width: 56, height: 56, borderRadius: 16, background: `${PRIMARY}12`, color: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>{icon}</div>
       <div style={{ fontSize: 40, fontWeight: 900, color: PRIMARY, letterSpacing: '-2px', lineHeight: 1, marginBottom: 8 }}>{count}{suffix}</div>
       <div style={{ fontSize: 13, color: t.textMute, fontWeight: 500 }}>{label}</div>
@@ -159,7 +145,6 @@ const Icons = {
   moon:      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
 };
 
-// ── Particles ──
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -179,19 +164,13 @@ function Particles() {
   return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}/>;
 }
 
-// ── Section Title ──
 function SectionTitle({ label, labelColor = PRIMARY, title, titleGradient, sub, t }: {
   label: string; labelColor?: string; title: string; titleGradient?: string; sub?: string; t: typeof THEMES.light;
 }) {
   return (
     <AnimSection style={{ textAlign: 'center', marginBottom: 52 }}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 16, background: `${labelColor}0F`, border: `1px solid ${labelColor}20`, borderRadius: 100, padding: '8px 20px' }}
-      >
+      <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 16, background: `${labelColor}0F`, border: `1px solid ${labelColor}20`, borderRadius: 100, padding: '8px 20px' }}>
         <div style={{ width: 6, height: 6, borderRadius: '50%', background: labelColor }}/>
         <span style={{ fontSize: 12, fontWeight: 700, color: labelColor, letterSpacing: '3px', textTransform: 'uppercase' as const }}>{label}</span>
         <div style={{ width: 6, height: 6, borderRadius: '50%', background: labelColor }}/>
@@ -203,11 +182,7 @@ function SectionTitle({ label, labelColor = PRIMARY, title, titleGradient, sub, 
       </h2>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: sub ? 16 : 0 }}>
         <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to left, ${labelColor}, ${labelColor}60)` }}/>
-        <motion.div
-          animate={{ scale: [1, 1.4, 1] }}
-          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-          style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}
-        />
+        <motion.div animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }} style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}/>
         <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to right, ${labelColor}, ${labelColor}60)` }}/>
       </div>
       {sub && <p style={{ fontSize: 15, color: t.textMute, maxWidth: 440, margin: '12px auto 0', lineHeight: 1.75 }}>{sub}</p>}
@@ -222,104 +197,75 @@ export default function HomePage() {
   const t = dark ? THEMES.dark : THEMES.light;
   const TH = t.text;
 
-  // Parallax for hero image
   const heroRef = useRef<HTMLElement>(null);
-  const { scrollY } = useScroll();
-  const heroImgY = useTransform(scrollY, [0, 600], [0, 120]);
+
+  const [heroSlide, setHeroSlide] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setHeroSlide(s => (s + 1) % heroSlides.length), 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div dir={dir} style={{ background: t.bg, minHeight: '100vh', transition: 'background 0.3s' }}>
 
-      {/* ── Scroll Progress ── */}
       <ScrollProgress />
-
-      {/* ── NAVBAR ── */}
       <Navbar />
 
       {/* ══ HERO ══ */}
-      <section ref={heroRef} style={{ position: 'relative', height: '100vh', minHeight: 'calc(100vh - 68px)', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-        {/* Parallax Image */}
-        <motion.img
-          src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1800&q=85"
-          alt=""
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '110%',
-            objectFit: 'cover', objectPosition: 'center 30%',
-            y: heroImgY,
-          }}
-        />
-        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(5,15,35,0.88) 0%, rgba(5,15,35,0.55) 25%, rgba(5,15,35,0.3) 50%, transparent 70%), linear-gradient(135deg, rgba(10,22,40,0.9) 0%, ${PRIMARY}bb 55%, ${PRIMARY_L}70 100%)` }}/>
+      <section ref={heroRef} style={{ position: 'relative', height: '90vh', minHeight: 'unset', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+
+        {/*  Rotating Slides */}
+        {heroSlides.map((slide, i) => (
+          <motion.img key={i} src={slide.src} alt=""
+            initial={{ opacity: 0 }}
+            animate={{ opacity: heroSlide === i ? 1 : 0 }}
+            transition={{ duration: 1.2, ease: 'easeInOut' }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '110%', objectFit: 'cover', objectPosition: slide.position }}
+          />
+        ))}
+
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(5,15,35,0.7) 0%, rgba(5,15,35,0.55) 25%, rgba(5,15,35,0.3) 50%, transparent 70%), linear-gradient(135deg, rgba(10,22,40,0.9) 0%, ${PRIMARY}bb 55%, ${PRIMARY_L}70 100%)` }}/>
         <Particles />
+
+        {/*  Slide Dots */}
+        <div style={{ position: 'absolute', bottom: 110, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 10 }}>
+          {heroSlides.map((_, i) => (
+            <button key={i} onClick={() => setHeroSlide(i)}
+              style={{ width: heroSlide === i ? 24 : 8, height: 8, borderRadius: 4, background: heroSlide === i ? 'white' : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', transition: 'all 0.3s', padding: 0 }}/>
+          ))}
+        </div>
 
         <div className="hero-content" style={{ position: 'relative', zIndex: 10, maxWidth: 1120, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
           <div style={{ maxWidth: 620 }}>
-
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 100, padding: '7px 18px', marginBottom: 28 }}
-            >
-              <motion.span
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', display: 'inline-block', boxShadow: '0 0 0 3px rgba(74,222,128,0.3)' }}
-              />
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 100, padding: '7px 18px', marginBottom: 28 }}>
+              <motion.span animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }}
+                style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', display: 'inline-block', boxShadow: '0 0 0 3px rgba(74,222,128,0.3)' }}/>
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.95)', fontWeight: 500 }}>{lx.home.hero_badge}</span>
             </motion.div>
 
-            {/* Title */}
-            <motion.h1
-              className="hero-title"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              style={{ fontSize: 'clamp(38px, 6vw, 76px)', fontWeight: 900, color: 'white', lineHeight: 1.3, marginBottom: 22, letterSpacing: '-2px', textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
-            >
+            <motion.h1 className="hero-title" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }}
+              style={{ fontSize: 'clamp(38px, 6vw, 76px)', fontWeight: 900, color: 'white', lineHeight: 1.3, marginBottom: 22, letterSpacing: '-2px', textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
               {lx.home.hero_title_1}
-              <motion.span
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-                style={{ display: 'block', background: `linear-gradient(135deg, ${GOLD}, #FFE490)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' ,paddingBottom: '8px' }}
-              >
+              <motion.span initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.6 }}
+                style={{ display: 'block', background: `linear-gradient(135deg, ${GOLD}, #FFE490)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', paddingBottom: '8px' }}>
                 {lx.home.hero_title_2}
               </motion.span>
             </motion.h1>
 
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.7 }}
-              style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', lineHeight: 1.8, marginBottom: 40, maxWidth: 500, textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}
-            >
+            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.7 }}
+              style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', lineHeight: 1.8, marginBottom: 40, maxWidth: 500, textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
               {lx.home.hero_sub}
             </motion.p>
 
-            {/* Buttons */}
-            <motion.div
-              className="hero-buttons"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.9 }}
-              style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 44 }}
-            >
-              <motion.button
-                whileHover={{ scale: 1.04, boxShadow: '0 16px 40px rgba(0,0,0,0.4)' }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => router.push('/apply')}
-                style={{ height: 52, padding: '0 32px', background: 'white', color: PRIMARY, borderRadius: 14, border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}
-              >
+            <motion.div className="hero-buttons" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.9 }}
+              style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 44 }}>
+              <motion.button whileHover={{ scale: 1.04, boxShadow: '0 16px 40px rgba(0,0,0,0.4)' }} whileTap={{ scale: 0.97 }} onClick={() => router.push('/apply')}
+                style={{ height: 52, padding: '0 32px', background: 'white', color: PRIMARY, borderRadius: 14, border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
                 {lx.home.apply_btn}
               </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.2)' }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => router.push('/track')}
-                style={{ height: 52, padding: '0 28px', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', color: 'white', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.3)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}
-              >
+              <motion.button whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.2)' }} whileTap={{ scale: 0.97 }} onClick={() => router.push('/track')}
+                style={{ height: 52, padding: '0 28px', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', color: 'white', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.3)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}>
                 {lx.home.track_btn}
               </motion.button>
             </motion.div>
@@ -327,17 +273,10 @@ export default function HomePage() {
         </div>
 
         {/* Scroll indicator */}
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          style={{ position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
-        >
+        <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }}
+          style={{ position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <div style={{ width: 24, height: 40, borderRadius: 12, border: '2px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '6px 0' }}>
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              style={{ width: 4, height: 8, borderRadius: 2, background: 'rgba(255,255,255,0.7)' }}
-            />
+            <motion.div animate={{ y: [0, 12, 0] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ width: 4, height: 8, borderRadius: 2, background: 'rgba(255,255,255,0.7)' }}/>
           </div>
         </motion.div>
 
@@ -369,18 +308,11 @@ export default function HomePage() {
               {lang === 'ar' ? 'أرقام حقيقية تعكس حجم تأثيرنا في المجتمع' : 'Real numbers reflecting our community impact'}
             </p>
           </AnimSection>
-          <motion.div
-            className="stats-grid"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}
-            variants={stagger}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
+          <motion.div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }} variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             {[
-              { target: 500, suffix: '+', label: lx.home.stats_families,   icon: Icons.people },
-              { target: 3,   suffix: '+', label: lx.home.stats_years,      icon: Icons.shield },
-              { target: 1200,   suffix: '',  label: lx.home.stats_requests,   icon: Icons.heart },
+              { target: 500,  suffix: '+', label: lx.home.stats_families,   icon: Icons.people },
+              { target: 3,    suffix: '+', label: lx.home.stats_years,      icon: Icons.shield },
+              { target: 1200, suffix: '',  label: lx.home.stats_requests,   icon: Icons.heart },
               { target: 150,  suffix: '٪', label: lx.home.stats_volunteers, icon: Icons.star },
             ].map((s, i) => <CounterStat key={i} {...s} t={t}/>)}
           </motion.div>
@@ -417,15 +349,8 @@ export default function HomePage() {
                 { title: lang === 'ar' ? 'قيمنا'  : 'Values',  desc: lang === 'ar' ? 'الشفافية والأمانة' : 'Transparency and integrity', color: GOLD },
                 { title: lang === 'ar' ? 'هدفنا'  : 'Goal',    desc: lang === 'ar' ? 'الوصول لكل محتاج' : 'Reaching every person in need', color: PRIMARY_L },
               ].map((v, i) => (
-                <motion.div
-                  key={v.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.5 }}
-                  whileHover={{ scale: 1.03, y: -3 }}
-                  style={{ padding: '14px 16px', borderRadius: 12, background: `${v.color}${dark ? '18' : '08'}`, border: `1.5px solid ${v.color}${dark ? '30' : '18'}`, cursor: 'default' }}
-                >
+                <motion.div key={v.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} whileHover={{ scale: 1.03, y: -3 }}
+                  style={{ padding: '14px 16px', borderRadius: 12, background: `${v.color}${dark ? '18' : '08'}`, border: `1.5px solid ${v.color}${dark ? '30' : '18'}`, cursor: 'default' }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: v.color, marginBottom: 4 }}>{v.title}</div>
                   <div style={{ fontSize: 12, color: t.textMute, lineHeight: 1.5 }}>{v.desc}</div>
                 </motion.div>
@@ -433,20 +358,10 @@ export default function HomePage() {
             </div>
           </AnimSection>
           <AnimSection delay={0.2} direction="left" className="about-img" style={{ position: 'relative' }}>
-            <motion.img
-              src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=700&q=85"
-              alt="فريق العمل"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.4 }}
-              style={{ borderRadius: 24, width: '100%', height: 400, objectFit: 'cover', boxShadow: `0 32px 80px ${PRIMARY}25`, display: 'block' }}
-            />
-            <motion.div
-              initial={{ opacity: 0, x: 20, y: 20 }}
-              whileInView={{ opacity: 1, x: 0, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-              style={{ position: 'absolute', bottom: -18, right: -18, background: t.card, borderRadius: 16, padding: '14px 20px', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', gap: 12, border: `2px solid ${t.border}` }}
-            >
+            <motion.img src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=700&q=85" alt="فريق العمل" whileHover={{ scale: 1.02 }} transition={{ duration: 0.4 }}
+              style={{ borderRadius: 24, width: '100%', height: 400, objectFit: 'cover', boxShadow: `0 32px 80px ${PRIMARY}25`, display: 'block' }}/>
+            <motion.div initial={{ opacity: 0, x: 20, y: 20 }} whileInView={{ opacity: 1, x: 0, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.6 }}
+              style={{ position: 'absolute', bottom: -18, right: -18, background: t.card, borderRadius: 16, padding: '14px 20px', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', gap: 12, border: `2px solid ${t.border}` }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: `${PRIMARY}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: PRIMARY }}>{Icons.check}</div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 800, color: TH }}>{lang === 'ar' ? '+٣ سنوات' : '+3 Years'}</div>
@@ -460,33 +375,17 @@ export default function HomePage() {
       {/* ══ SERVICES ══ */}
       <section style={{ background: t.bg, padding: '80px 24px' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <SectionTitle
-            label={lang === 'ar' ? 'خدماتنا' : 'Our Services'}
-            title={lang === 'ar' ? 'مجالات المساعدة' : 'Areas of Assistance'}
-            sub={lang === 'ar' ? 'نقدم الدعم الإنساني في ثلاثة مجالات أساسية' : 'We provide humanitarian support in three key areas'}
-            t={t}
-          />
+          <SectionTitle label={lang === 'ar' ? 'خدماتنا' : 'Our Services'} title={lang === 'ar' ? 'مجالات المساعدة' : 'Areas of Assistance'} sub={lang === 'ar' ? 'نقدم الدعم الإنساني في ثلاثة مجالات أساسية' : 'We provide humanitarian support in three key areas'} t={t}/>
           <div className="services-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-             { img: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=600&q=80', title: lx.home.service_medical_title, desc: lx.home.service_medical_desc, color: PRIMARY, icon: Icons.medical },
-             { img: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80', title: lx.home.service_edu_title,     desc: lx.home.service_edu_desc,     color: '#0F6E56', icon: Icons.education },
-             { img: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&q=80', title: lx.home.service_fin_title,     desc: lx.home.service_fin_desc,     color: GOLD,    icon: Icons.support },].map((s, i) => (
-              <motion.div
-                key={s.title}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.6 }}
-                whileHover={{ y: -8, boxShadow: `0 24px 60px ${s.color}20` }}
-                style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${t.border}`, background: t.card }}
-              >
+              { img: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=600&q=80', title: lx.home.service_medical_title, desc: lx.home.service_medical_desc, color: PRIMARY,   icon: Icons.medical },
+              { img: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80', title: lx.home.service_edu_title,     desc: lx.home.service_edu_desc,     color: '#0F6E56', icon: Icons.education },
+              { img: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&q=80', title: lx.home.service_fin_title,     desc: lx.home.service_fin_desc,     color: GOLD,      icon: Icons.support },
+            ].map((s, i) => (
+              <motion.div key={s.title} initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6 }} whileHover={{ y: -8, boxShadow: `0 24px 60px ${s.color}20` }}
+                style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${t.border}`, background: t.card }}>
                 <div style={{ height: 200, overflow: 'hidden', position: 'relative' }}>
-                  <motion.img
-                    src={s.img} alt={s.title}
-                    whileHover={{ scale: 1.08 }}
-                    transition={{ duration: 0.5 }}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                  <motion.img src={s.img} alt={s.title} whileHover={{ scale: 1.08 }} transition={{ duration: 0.5 }} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
                   <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to top, ${s.color}65, transparent)` }}/>
                   <div style={{ position: 'absolute', bottom: 14, right: 14, width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{s.icon}</div>
                 </div>
@@ -494,11 +393,8 @@ export default function HomePage() {
                   <div style={{ width: 32, height: 3, borderRadius: 2, background: s.color, marginBottom: 12 }}/>
                   <h3 style={{ fontSize: 17, fontWeight: 800, color: TH, marginBottom: 8 }}>{s.title}</h3>
                   <p style={{ fontSize: 13, color: t.textMute, lineHeight: 1.75, marginBottom: 16 }}>{s.desc}</p>
-                  <motion.button
-                    whileHover={{ gap: 10 }}
-                    onClick={() => router.push('/apply')}
-                    style={{ fontSize: 13, fontWeight: 700, color: s.color, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}
-                  >
+                  <motion.button whileHover={{ gap: 10 }} onClick={() => router.push('/apply')}
+                    style={{ fontSize: 13, fontWeight: 700, color: s.color, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                     {lang === 'ar' ? 'تقدّم بطلب' : 'Apply Now'} {Icons.arrow}
                   </motion.button>
                 </div>
@@ -511,49 +407,29 @@ export default function HomePage() {
       {/* ══ HOW IT WORKS ══ */}
       <section style={{ background: t.bg2, padding: '80px 24px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <SectionTitle
-            label={lang === 'ar' ? 'آلية العمل' : 'How It Works'}
-            labelColor={GOLD}
-            title={lang === 'ar' ? 'كيف تقدم طلبك؟' : 'How to Apply?'}
-            sub={lang === 'ar' ? 'أربع خطوات بسيطة للحصول على المساعدة' : 'Four simple steps to get assistance'}
-            t={t}
-          />
+          <SectionTitle label={lang === 'ar' ? 'آلية العمل' : 'How It Works'} labelColor={GOLD} title={lang === 'ar' ? 'كيف تقدم طلبك؟' : 'How to Apply?'} sub={lang === 'ar' ? 'أربع خطوات بسيطة للحصول على المساعدة' : 'Four simple steps to get assistance'} t={t}/>
           <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, position: 'relative' }}>
             <div className="steps-line" style={{ position: 'absolute', top: 33, right: '14%', left: '14%', height: 1, background: `linear-gradient(to left, transparent, ${PRIMARY}25, transparent)`, pointerEvents: 'none' }}/>
             {[
               { num: '01', title: lx.home.step1_title, desc: lx.home.step1_desc, color: PRIMARY, icon: Icons.form },
               { num: '02', title: lx.home.step2_title, desc: lx.home.step2_desc, color: GOLD,    icon: Icons.upload },
               { num: '03', title: lx.home.step3_title, desc: lx.home.step3_desc, color: PRIMARY, icon: Icons.review },
-              { num: '04', title: lx.home.step4_title, desc: lx.home.step4_desc, color: GOLD,    icon: Icons.gift },    
-               ].map((item, i) => (
-              <motion.div
-                key={item.num}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.6 }}
-                style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}
-              >
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                  style={{ width: 66, height: 66, borderRadius: 20, background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', boxShadow: `0 10px 30px ${item.color}45` }}
-                >
+              { num: '04', title: lx.home.step4_title, desc: lx.home.step4_desc, color: GOLD,    icon: Icons.gift },
+            ].map((item, i) => (
+              <motion.div key={item.num} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6 }} style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: 'spring', stiffness: 300 }}
+                  style={{ width: 66, height: 66, borderRadius: 20, background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', boxShadow: `0 10px 30px ${item.color}45` }}>
                   {item.icon}
                 </motion.div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: item.color, letterSpacing: '1.5px', marginBottom: 6 ,fontFamily: 'sans-serif' }}>{item.num}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: item.color, letterSpacing: '1.5px', marginBottom: 6, fontFamily: 'sans-serif' }}>{item.num}</div>
                 <h3 style={{ fontSize: 15, fontWeight: 800, color: TH, marginBottom: 8 }}>{item.title}</h3>
                 <p style={{ fontSize: 12.5, color: t.textMute, lineHeight: 1.7 }}>{item.desc}</p>
               </motion.div>
             ))}
           </div>
           <AnimSection style={{ textAlign: 'center', marginTop: 48 }}>
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: `0 14px 40px ${PRIMARY}55` }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => router.push('/apply')}
-              style={{ height: 52, padding: '0 40px', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', borderRadius: 14, border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: `0 8px 28px ${PRIMARY}40` }}
-            >
+            <motion.button whileHover={{ scale: 1.04, boxShadow: `0 14px 40px ${PRIMARY}55` }} whileTap={{ scale: 0.97 }} onClick={() => router.push('/apply')}
+              style={{ height: 52, padding: '0 40px', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', borderRadius: 14, border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: `0 8px 28px ${PRIMARY}40` }}>
               {lang === 'ar' ? 'ابدأ الآن — قدّم طلبك مجاناً' : 'Start Now — Apply for Free'}
             </motion.button>
           </AnimSection>
@@ -563,28 +439,15 @@ export default function HomePage() {
       {/* ══ TESTIMONIALS ══ */}
       <section style={{ background: t.bg, padding: '80px 24px' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <SectionTitle
-            label={lang === 'ar' ? 'قصص نجاح' : 'Success Stories'}
-            labelColor={GOLD}
-            title={lang === 'ar' ? 'ماذا يقول المستفيدون؟' : 'What Beneficiaries Say'}
-            sub={lang === 'ar' ? 'قصص حقيقية من أسر استفادت من دعم المؤسسة' : 'Real stories from families who benefited from foundation support'}
-            t={t}
-          />
+          <SectionTitle label={lang === 'ar' ? 'قصص نجاح' : 'Success Stories'} labelColor={GOLD} title={lang === 'ar' ? 'ماذا يقول المستفيدون؟' : 'What Beneficiaries Say'} sub={lang === 'ar' ? 'قصص حقيقية من أسر استفادت من دعم المؤسسة' : 'Real stories from families who benefited from foundation support'} t={t}/>
           <div className="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 22 }}>
             {[
-              { text: lang === 'ar' ? 'ساعدتنا المؤسسة في تغطية تكاليف عملية ابني، لا أجد كلمات تعبر عن امتناني لهذا الفريق الرائع.' : 'The foundation helped us cover my son\'s surgery costs. I cannot find words to express my gratitude to this wonderful team.', name: lang === 'ar' ? 'أم محمد' : 'Um Mohammad', region: lang === 'ar' ? 'حلب' : 'Aleppo', type: lang === 'ar' ? 'علاج طبي' : 'Medical', color: PRIMARY },
-              { text: lang === 'ar' ? 'بفضل دعم المؤسسة تمكنت ابنتي من إكمال دراستها والحصول على شهادتها، شكراً لكل من ساهم.' : 'Thanks to the foundation\'s support, my daughter was able to complete her studies and get her degree.', name: lang === 'ar' ? 'أبو سارة' : 'Abu Sara', region: lang === 'ar' ? 'إدلب' : 'Idlib', type: lang === 'ar' ? 'تعليم' : 'Education', color: '#0F6E56' },
+              { text: lang === 'ar' ? 'ساعدتنا المؤسسة في تغطية تكاليف عملية ابني، لا أجد كلمات تعبر عن امتناني لهذا الفريق الرائع.' : "The foundation helped us cover my son's surgery costs. I cannot find words to express my gratitude to this wonderful team.", name: lang === 'ar' ? 'أم محمد' : 'Um Mohammad', region: lang === 'ar' ? 'حلب' : 'Aleppo', type: lang === 'ar' ? 'علاج طبي' : 'Medical', color: PRIMARY },
+              { text: lang === 'ar' ? 'بفضل دعم المؤسسة تمكنت ابنتي من إكمال دراستها والحصول على شهادتها، شكراً لكل من ساهم.' : "Thanks to the foundation's support, my daughter was able to complete her studies and get her degree.", name: lang === 'ar' ? 'أبو سارة' : 'Abu Sara', region: lang === 'ar' ? 'إدلب' : 'Idlib', type: lang === 'ar' ? 'تعليم' : 'Education', color: '#0F6E56' },
               { text: lang === 'ar' ? 'في أصعب الظروف وجدنا يداً حانية تمدّ لنا العون، المؤسسة كانت نعمة حقيقية لأسرتنا.' : 'In the hardest times we found a caring hand extending help to us. The foundation was a true blessing for our family.', name: lang === 'ar' ? 'أم عمر' : 'Um Omar', region: lang === 'ar' ? 'درعا' : 'Daraa', type: lang === 'ar' ? 'دعم معيشي' : 'Financial', color: GOLD },
             ].map((t2, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.6 }}
-                whileHover={{ y: -6, boxShadow: `0 20px 50px ${t2.color}18` }}
-                style={{ padding: '28px', borderRadius: 20, background: t.card, borderTop: `3px solid ${t2.color}`, border: `1px solid ${t.border}`, cursor: 'default' }}
-              >
+              <motion.div key={i} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6 }} whileHover={{ y: -6, boxShadow: `0 20px 50px ${t2.color}18` }}
+                style={{ padding: '28px', borderRadius: 20, background: t.card, borderTop: `3px solid ${t2.color}`, border: `1px solid ${t.border}`, cursor: 'default' }}>
                 <div style={{ fontSize: 52, lineHeight: 1, color: `${t2.color}20`, fontFamily: 'Georgia,serif', marginBottom: 12 }}>"</div>
                 <p style={{ fontSize: 14, color: t.textSub, lineHeight: 1.85, marginBottom: 20, fontStyle: 'italic' }}>{t2.text}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -604,126 +467,48 @@ export default function HomePage() {
       {/* ══ TEAM & VOLUNTEER ══ */}
       <section style={{ background: t.bg2, padding: '64px 24px' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <SectionTitle
-            label={lang === 'ar' ? 'فريقنا' : 'Our Team'}
-            title={lang === 'ar' ? 'من يقف خلف غزلان الخير' : 'The People Behind Ghozlan Alkhair'}
-            sub={lang === 'ar' ? 'فريق متطوع متكامل يعمل بصمت لخدمة أهلنا في سوريا' : 'A dedicated volunteer team working quietly to serve our people in Syria'}
-            t={t}
-          />
-
+          <SectionTitle label={lang === 'ar' ? 'فريقنا' : 'Our Team'} title={lang === 'ar' ? 'من يقف خلف غزلان الخير' : 'The People Behind Ghozlan Alkhair'} sub={lang === 'ar' ? 'فريق متطوع متكامل يعمل بصمت لخدمة أهلنا في سوريا' : 'A dedicated volunteer team working quietly to serve our people in Syria'} t={t}/>
           <div className="partners-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
-          {[
-        {
-          role: lang === 'ar' ? 'الإدارة والتنسيق' : 'Management',
-          color: PRIMARY,
-          desc: lang === 'ar' ? 'يشرفون على سير العمل واتخاذ القرار' : 'Oversee operations and decisions',
-          icon: (
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/>
-            </svg>
-          ),
-        },
-        {
-          role: lang === 'ar' ? 'فريق المراجعة' : 'Review Team',
-          color: PRIMARY_L,
-          desc: lang === 'ar' ? 'يراجعون الطلبات ويتحققون من البيانات' : 'Review and verify applications',
-          icon: (
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-            </svg>
-          ),
-        },
-        {
-          role: lang === 'ar' ? 'المتابعة الميدانية' : 'Field Follow-up',
-          color: GOLD,
-          desc: lang === 'ar' ? 'يتابعون الحالات ويتحققون من التسليم' : 'Follow up cases and verify delivery',
-          icon: (
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-          ),
-        },
-        {
-          role: lang === 'ar' ? 'الدعم التقني' : 'Tech Support',
-          color: '#059669',
-          desc: lang === 'ar' ? 'يديرون المنصة ويضمنون سيرها' : 'Manage the platform and ensure it runs',
-          icon: (
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2"/>
-              <path d="M8 21h8M12 17v4"/>
-            </svg>
-          ),
-        },
-      ].map((item, i) => (
-        <motion.div key={item.role}
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: i * 0.1, duration: 0.5 }}
-          whileHover={{ y: -5 }}
-          style={{ background: t.card, borderRadius: 16, padding: '28px 20px', textAlign: 'center', border: `1px solid ${item.color}20` }}
-        >
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: `${item.color}12`, border: `1.5px solid ${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: item.color }}>
-            {item.icon}
+            {[
+              { role: lang === 'ar' ? 'الإدارة والتنسيق' : 'Management', color: PRIMARY, desc: lang === 'ar' ? 'يشرفون على سير العمل واتخاذ القرار' : 'Oversee operations and decisions',
+                icon: <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/></svg> },
+              { role: lang === 'ar' ? 'فريق المراجعة' : 'Review Team', color: PRIMARY_L, desc: lang === 'ar' ? 'يراجعون الطلبات ويتحققون من البيانات' : 'Review and verify applications',
+                icon: <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> },
+              { role: lang === 'ar' ? 'المتابعة الميدانية' : 'Field Follow-up', color: GOLD, desc: lang === 'ar' ? 'يتابعون الحالات ويتحققون من التسليم' : 'Follow up cases and verify delivery',
+                icon: <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg> },
+              { role: lang === 'ar' ? 'الدعم التقني' : 'Tech Support', color: '#059669', desc: lang === 'ar' ? 'يديرون المنصة ويضمنون سيرها' : 'Manage the platform and ensure it runs',
+                icon: <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> },
+            ].map((item, i) => (
+              <motion.div key={item.role} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} whileHover={{ y: -5 }}
+                style={{ background: t.card, borderRadius: 16, padding: '28px 20px', textAlign: 'center', border: `1px solid ${item.color}20` }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: `${item.color}12`, border: `1.5px solid ${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: item.color }}>{item.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.text, marginBottom: 8 }}>{item.role}</div>
+                <div style={{ fontSize: 11, color: t.textMute, lineHeight: 1.6 }}>{item.desc}</div>
+              </motion.div>
+            ))}
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: t.text, marginBottom: 8 }}>{item.role}</div>
-          <div style={{ fontSize: 11, color: t.textMute, lineHeight: 1.6 }}>{item.desc}</div>
-        </motion.div>
-      ))}
-    </div>
-
-    {/* Volunteer CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          style={{ borderRadius: 20, padding: '40px 32px', background: `linear-gradient(135deg, ${PRIMARY}10, ${PRIMARY_L}08)`, border: `1px solid ${PRIMARY}20`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' as const }}
-        >
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: t.text, marginBottom: 8 }}>
-              {lang === 'ar' ? 'هل تريد أن تكون جزءاً من الفريق؟' : 'Want to be part of the team?'}
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            style={{ borderRadius: 20, padding: '40px 32px', background: `linear-gradient(135deg, ${PRIMARY}10, ${PRIMARY_L}08)`, border: `1px solid ${PRIMARY}20`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' as const }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: t.text, marginBottom: 8 }}>{lang === 'ar' ? 'هل تريد أن تكون جزءاً من الفريق؟' : 'Want to be part of the team?'}</div>
+              <div style={{ fontSize: 13, color: t.textMute, lineHeight: 1.7, maxWidth: 480 }}>{lang === 'ar' ? 'نرحب بكل من يريد المساهمة في خدمة أهلنا — سواء بوقته أو خبرته أو مهاراته' : 'We welcome anyone who wants to contribute — whether with their time, expertise, or skills'}</div>
             </div>
-            <div style={{ fontSize: 13, color: t.textMute, lineHeight: 1.7, maxWidth: 480 }}>
-              {lang === 'ar'
-                ? 'نرحب بكل من يريد المساهمة في خدمة أهلنا — سواء بوقته أو خبرته أو مهاراته'
-                : 'We welcome anyone who wants to contribute — whether with their time, expertise, or skills'}
-            </div>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.04, boxShadow: `0 8px 28px ${PRIMARY}40` }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => router.push('/volunteer')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 14, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0 }}
-          >
-            <svg width="16" height="16" fill="none" stroke="white" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            {lang === 'ar' ? 'انضم كمتطوع' : 'Join as Volunteer'}
-          </motion.button>
-        </motion.div>
-
-      </div>
-    </section>
+            <motion.button whileHover={{ scale: 1.04, boxShadow: `0 8px 28px ${PRIMARY}40` }} whileTap={{ scale: 0.97 }} onClick={() => router.push('/volunteer')}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 14, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
+              <svg width="16" height="16" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+              {lang === 'ar' ? 'انضم كمتطوع' : 'Join as Volunteer'}
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
 
       {/* ══ FAQ ══ */}
       <section style={{ background: t.bg, padding: '80px 24px' }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <SectionTitle
-            label={lang === 'ar' ? 'الأسئلة الشائعة' : 'FAQ'}
-            title={lang === 'ar' ? 'أسئلة شائعة' : 'Frequently Asked Questions'}
-            sub={lang === 'ar' ? 'إجابات على أكثر الأسئلة شيوعاً' : 'Answers to the most common questions'}
-            t={t}
-          />
+          <SectionTitle label={lang === 'ar' ? 'الأسئلة الشائعة' : 'FAQ'} title={lang === 'ar' ? 'أسئلة شائعة' : 'Frequently Asked Questions'} sub={lang === 'ar' ? 'إجابات على أكثر الأسئلة شيوعاً' : 'Answers to the most common questions'} t={t}/>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {lx.home.faq.map((faq, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, duration: 0.5 }}
-              >
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.5 }}>
                 <details style={{ borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, overflow: 'hidden' }}>
                   <summary style={{ padding: '16px 20px', cursor: 'pointer', fontWeight: 700, fontSize: 14, color: TH, display: 'flex', alignItems: 'center', justifyContent: 'space-between', listStyle: 'none', userSelect: 'none' }}>
                     {faq.q}
@@ -733,7 +518,6 @@ export default function HomePage() {
                 </details>
               </motion.div>
             ))}
-           
           </div>
         </div>
       </section>
@@ -741,33 +525,16 @@ export default function HomePage() {
       {/* ══ CONTACT ══ */}
       <section style={{ background: t.bg2, padding: '80px 24px', position: 'relative', zIndex: 0, overflow: 'hidden' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <SectionTitle
-            label={lang === 'ar' ? 'تواصل معنا' : 'Contact Us'}
-            title={lang === 'ar' ? 'نحن هنا لمساعدتك' : 'We Are Here to Help'}
-            sub={lang === 'ar' ? 'تواصل معنا عبر أي قناة تناسبك' : 'Contact us through any channel that suits you'}
-            t={t}
-          />
+          <SectionTitle label={lang === 'ar' ? 'تواصل معنا' : 'Contact Us'} title={lang === 'ar' ? 'نحن هنا لمساعدتك' : 'We Are Here to Help'} sub={lang === 'ar' ? 'تواصل معنا عبر أي قناة تناسبك' : 'Contact us through any channel that suits you'} t={t}/>
           <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {[
               { title: lang === 'ar' ? 'واتساب' : 'WhatsApp', desc: lang === 'ar' ? 'تواصل معنا مباشرة' : 'Contact us directly', value: '+963 XX XXX XXXX', color: '#25D366', icon: Icons.phone },
               { title: lang === 'ar' ? 'البريد الإلكتروني' : 'Email', desc: lang === 'ar' ? 'أرسل لنا استفسارك' : 'Send us your inquiry', value: 'info@ghozlan.org', color: PRIMARY, icon: Icons.mail },
               { title: lang === 'ar' ? 'ساعات العمل' : 'Working Hours', desc: lang === 'ar' ? 'أحد — خميس' : 'Sun — Thu', value: lang === 'ar' ? '٩ ص — ٤ م' : '9 AM — 4 PM', color: GOLD, icon: Icons.clock },
             ].map((c, i) => (
-              <motion.div
-                key={c.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.6 }}
-                whileHover={{ y: -6, boxShadow: `0 20px 50px ${c.color}18` }}
-                style={{ background: t.card, borderRadius: 20, padding: '32px 24px', textAlign: 'center', border: `1px solid ${t.border}`, cursor: 'default' }}
-              >
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 10 }}
-                  style={{ width: 54, height: 54, borderRadius: 14, background: `${c.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: c.color }}
-                >
-                  {c.icon}
-                </motion.div>
+              <motion.div key={c.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6 }} whileHover={{ y: -6, boxShadow: `0 20px 50px ${c.color}18` }}
+                style={{ background: t.card, borderRadius: 20, padding: '32px 24px', textAlign: 'center', border: `1px solid ${t.border}`, cursor: 'default' }}>
+                <motion.div whileHover={{ scale: 1.1, rotate: 10 }} style={{ width: 54, height: 54, borderRadius: 14, background: `${c.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: c.color }}>{c.icon}</motion.div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: TH, marginBottom: 5 }}>{c.title}</div>
                 <div style={{ fontSize: 12, color: t.textMute, marginBottom: 10 }}>{c.desc}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: c.color }}>{c.value}</div>
@@ -778,40 +545,18 @@ export default function HomePage() {
       </section>
 
       {/* ══ CTA ══ */}
-            <section style={{ 
-        position: 'relative', overflow: 'hidden', 
-        padding: '80px 24px',
-        minHeight: 500, 
-        zIndex: 1, isolation: 'isolate',
-        marginTop: 0,
-      }}>
-        <motion.img
-          src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1600&q=85"
-
-          alt=""
-          style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            width: '100%', height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center center',
-          }}
-        />
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, rgba(5,15,35,0.88), rgba(27,108,168,0.82))',
-        }}/>
+      <section style={{ position: 'relative', overflow: 'hidden', padding: '80px 24px', minHeight: 500, zIndex: 1, isolation: 'isolate', marginTop: 0 }}>
+        <motion.img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1600&q=85" alt=""
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center center' }}/>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(5,15,35,0.45), rgba(27,108,168,0.82))' }}/>
         <AnimSection style={{ position: 'relative', zIndex: 10, maxWidth: 560, margin: '0 auto', textAlign: 'center', color: 'white' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 100, padding: '6px 18px', marginBottom: 22 }}>
             <motion.span animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }}/>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{lang === 'ar' ? 'نستقبل الطلبات الآن' : 'Now Accepting Applications'}</span>
           </div>
-          <h2 className="cta-title" style={{ fontSize: 44, fontWeight: 900, marginBottom: 8, letterSpacing: '-1px', lineHeight: 1.1 }}>
-            {lang === 'ar' ? 'هل تحتاج إلى مساعدة؟' : 'Do You Need Assistance?'}
-          </h2>
+          <h2 className="cta-title" style={{ fontSize: 44, fontWeight: 900, marginBottom: 8, letterSpacing: '-1px', lineHeight: 1.1 }}>{lang === 'ar' ? 'هل تحتاج إلى مساعدة؟' : 'Do You Need Assistance?'}</h2>
           <div style={{ width: 48, height: 4, borderRadius: 2, background: `linear-gradient(to left, ${GOLD}, #FFE490)`, margin: '0 auto 18px' }}/>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.72)', marginBottom: 36, lineHeight: 1.75 }}>
-            {lang === 'ar' ? 'لا تتردد في التقديم — فريقنا يراجع كل طلب بعناية' : 'Don\'t hesitate to apply — our team reviews every request carefully'}
-          </p>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.72)', marginBottom: 36, lineHeight: 1.75 }}>{lang === 'ar' ? 'لا تتردد في التقديم — فريقنا يراجع كل طلب بعناية' : "Don't hesitate to apply — our team reviews every request carefully"}</p>
           <div className="cta-buttons" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} onClick={() => router.push('/apply')}
               style={{ height: 52, padding: '0 36px', background: 'white', color: PRIMARY, borderRadius: 14, border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 32px rgba(0,0,0,0.25)' }}>
@@ -830,8 +575,7 @@ export default function HomePage() {
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 44 }}>
             <div onClick={() => router.push('/')} style={{ display: 'inline-flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 14 }}>
-              <img src="/g-logo.png" alt="مؤسسة غزلان الخير" className="footer-logo-img"
-                style={{ width: 80, height: 80, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(74,172,205,0.4))' }}/>
+              <img src="/g-logo.png" alt="مؤسسة غزلان الخير" className="footer-logo-img" style={{ width: 80, height: 80, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(74,172,205,0.4))' }}/>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{lang === 'ar' ? 'مؤسسة غزلان الخير' : 'Ghozlan Alkhair Foundation'}</div>
                 <div style={{ fontSize: 10, color: PRIMARY_L, letterSpacing: '0.4px' }}>{lang === 'ar' ? 'Ghozlan Alkhair Foundation' : 'مؤسسة غزلان الخير'}</div>
@@ -844,7 +588,6 @@ export default function HomePage() {
               <div style={{ width: 48, height: 1, background: 'rgba(201,168,76,0.25)' }}/>
             </div>
           </div>
-
           <div className="footer-links" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, maxWidth: 560, margin: '0 auto 40px' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: '#4B5563', marginBottom: 14, letterSpacing: '2px', textTransform: 'uppercase' as const }}>{lx.footer.services}</div>
@@ -875,19 +618,16 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
           <div className="footer-bottom">
             <p style={{ fontSize: 12, color: '#4B5563', margin: 0 }}>{lx.footer.rights}</p>
             <button onClick={toggle} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 10, border: `1.5px solid ${dark ? 'rgba(74,172,205,0.35)' : 'rgba(255,255,255,0.15)'}`, background: dark ? 'rgba(74,172,205,0.1)' : 'rgba(255,255,255,0.06)', cursor: 'pointer', color: dark ? PRIMARY_L : '#9CA3AF', fontSize: 12, fontWeight: 600, transition: 'all 0.22s' }}
               onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = dark ? 'rgba(74,172,205,0.18)' : 'rgba(255,255,255,0.12)'; el.style.color = 'white'; }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = dark ? 'rgba(74,172,205,0.1)' : 'rgba(255,255,255,0.06)'; el.style.color = dark ? PRIMARY_L : '#9CA3AF'; }}
-            >
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = dark ? 'rgba(74,172,205,0.1)' : 'rgba(255,255,255,0.06)'; el.style.color = dark ? PRIMARY_L : '#9CA3AF'; }}>
               {dark ? Icons.sun : Icons.moon}
               <span>{dark ? lx.footer.light : lx.footer.dark}</span>
             </button>
           </div>
         </div>
-
         <style>{`
           @media (max-width: 640px) { .footer-logo-img { width: 62px !important; height: 62px !important; } }
           .footer-bottom { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
@@ -900,9 +640,9 @@ export default function HomePage() {
       <style>{`
         details summary::-webkit-details-marker { display: none; }
         @media (max-width: 768px) {
-          .hero-content { padding: 110px 20px 60px !important; }
-          .hero-title { font-size: 36px !important; letter-spacing: -1px !important; }
-          .hero-buttons { flex-direction: column !important; }
+          .hero-content {  padding: 100px 16px 30px !important;  }
+          .hero-title { font-size: 30px !important; letter-spacing: -1px !important; }
+          .hero-buttons { flex-direction: column !important; gap: 10px !important;  }
           .hero-buttons button { width: 100% !important; text-align: center !important; }
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
           .about-grid { grid-template-columns: 1fr !important; gap: 32px !important; }

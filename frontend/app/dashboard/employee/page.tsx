@@ -29,7 +29,7 @@ const priorityMap: Record<string, { label: string; color: string }> = {
 
 const BgPattern = () => (
   <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-    <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
       <defs>
         <pattern id="dots2" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
           <circle cx="15" cy="15" r="1" fill="#1B6CA8" opacity="0.12"/>
@@ -94,7 +94,7 @@ export default function EmployeeDashboard() {
     router.push('/dashboard/login');
   };
 
-  const total   = pagination?.total || 0;
+  const total = pagination?.total || 0;
   const stats = {
     new:       requests.filter(r => r.status === 'new').length,
     reviewing: requests.filter(r => r.status === 'reviewing').length,
@@ -104,175 +104,195 @@ export default function EmployeeDashboard() {
   };
 
   if (loading && !user) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#EEF5FB' }}>
-      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: PRIMARY }}></div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EEF5FB' }}>
+      <div style={{ width: 32, height: 32, border: `2px solid ${PRIMARY}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
     </div>
   );
 
   const renderTable = () => {
     if (loading) return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: PRIMARY }}></div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
+        <div style={{ width: 28, height: 28, border: `2px solid ${PRIMARY}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
       </div>
     );
 
     if (requests.length === 0) return (
-      <div className="text-center py-16">
-        <svg className="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div style={{ textAlign: 'center', padding: '48px 0' }}>
+        <svg width="40" height="40" fill="none" stroke="#D1D5DB" viewBox="0 0 24 24" style={{ margin: '0 auto 12px', display: 'block' }}>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
         </svg>
-        <p className="text-sm text-gray-400">لا توجد طلبات مسندة إليك</p>
+        <p style={{ fontSize: 13, color: '#9CA3AF' }}>لا توجد طلبات مسندة إليك</p>
       </div>
     );
 
     return (
       <>
-        <div className="grid grid-cols-6 gap-0 px-5 py-3 border-b border-gray-100 bg-gray-50">
-          {['مقدم الطلب', 'نوع المساعدة', 'المنطقة', 'الأولوية', 'الحالة', 'تاريخ التقديم'].map(h => (
-            <div key={h} className="text-xs font-medium text-gray-500">{h}</div>
-          ))}
+        {/* Desktop Table */}
+        <div className="emp-hide-mobile">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', padding: '10px 20px', borderBottom: '1px solid #F3F4F6', background: '#F9FAFB' }}>
+            {['مقدم الطلب', 'نوع المساعدة', 'المنطقة', 'الأولوية', 'الحالة', 'تاريخ التقديم'].map(h => (
+              <div key={h} style={{ fontSize: 11, fontWeight: 600, color: '#6B7280' }}>{h}</div>
+            ))}
+          </div>
+          {requests.map(req => {
+            const status   = statusMap[req.status]     || statusMap.new;
+            const priority = priorityMap[req.priority] || priorityMap.normal;
+            return (
+              <div key={req.id}
+                onClick={() => router.push(`/dashboard/requests/${req.id}`)}
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', padding: '14px 20px', borderBottom: '1px solid #F9FAFB', cursor: 'pointer', alignItems: 'center', transition: 'background 0.15s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#EFF6FF'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{req.full_name}</div>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{req.phone}</div>
+                </div>
+                <div style={{ fontSize: 13, color: '#4B5563' }}>{assistanceMap[req.assistance_type] || req.assistance_type}</div>
+                <div style={{ fontSize: 13, color: '#4B5563' }}>{req.region}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: priority.color }}>{priority.label}</div>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: status.bg, color: status.color }}>
+                    {status.label}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>{new Date(req.created_at).toLocaleDateString('ar-SA')}</div>
+              </div>
+            );
+          })}
         </div>
-        {requests.map(req => {
-          const status   = statusMap[req.status]   || statusMap.new;
-          const priority = priorityMap[req.priority] || priorityMap.normal;
-          return (
-            <div key={req.id}
-              onClick={() => router.push(`/dashboard/requests/${req.id}`)}
-              className="grid grid-cols-6 gap-0 px-5 py-4 border-b border-gray-50 hover:bg-blue-50 cursor-pointer transition-all items-center">
-              <div>
-                <div className="text-sm font-medium text-gray-900">{req.full_name}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{req.phone}</div>
+
+        {/* Mobile Cards */}
+        <div className="emp-show-mobile" style={{ display: 'none', padding: 12, flexDirection: 'column', gap: 10 }}>
+          {requests.map(req => {
+            const status   = statusMap[req.status]     || statusMap.new;
+            const priority = priorityMap[req.priority] || priorityMap.normal;
+            return (
+              <div key={req.id}
+                onClick={() => router.push(`/dashboard/requests/${req.id}`)}
+                style={{ background: 'white', borderRadius: 14, padding: 14, border: `1px solid ${PRIMARY}12`, boxShadow: `0 2px 8px ${PRIMARY}06`, cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{req.full_name}</div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{req.phone}</div>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 100, background: status.bg, color: status.color }}>
+                    {status.label}
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  {[
+                    { label: 'نوع المساعدة', value: assistanceMap[req.assistance_type] || req.assistance_type, color: '#374151' },
+                    { label: 'المنطقة',      value: req.region, color: '#374151' },
+                    { label: 'الأولوية',     value: priority.label, color: priority.color },
+                    { label: 'التاريخ',      value: new Date(req.created_at).toLocaleDateString('ar-SA'), color: '#374151' },
+                  ].map(item => (
+                    <div key={item.label} style={{ background: '#F9FAFB', borderRadius: 8, padding: '8px 10px' }}>
+                      <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>{item.label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: item.color }}>{item.value}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="text-sm text-gray-600">{assistanceMap[req.assistance_type] || req.assistance_type}</div>
-              <div className="text-sm text-gray-600">{req.region}</div>
-              <div className="text-sm font-medium" style={{ color: priority.color }}>{priority.label}</div>
-              <div>
-                <span className="text-xs font-medium px-3 py-1 rounded-full"
-                  style={{ background: status.bg, color: status.color }}>
-                  {status.label}
-                </span>
-              </div>
-              <div className="text-xs text-gray-400">
-                {new Date(req.created_at).toLocaleDateString('ar-SA')}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </>
     );
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#EEF5FB', position: 'relative' }} dir="rtl">
+    <div style={{ minHeight: '100vh', background: '#EEF5FB', position: 'relative' }} dir="rtl">
       <BgPattern />
 
       {/* Navbar */}
-    <nav style={{
-      background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)',
-      borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50,
-    }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <nav style={{ background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', boxSizing: 'border-box' }}>
 
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <img src="/g-logo.png" alt="غزلان الخير"
-            style={{ width: 38, height: 38, objectFit: 'contain' }}
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.2px', lineHeight: 1.2 }}>لوحة الموظف</div>
-            <div style={{ fontSize: 8, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <NotificationBell />
-
-          {/* User Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 10, background: `${PRIMARY}08`, border: `1px solid ${PRIMARY}20` }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-              {user?.name?.charAt(0)}
-            </div>
-            <div className="req-hide-mobile">
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
-              <div style={{ fontSize: 9, color: PRIMARY_L }}>موظف</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <img src="/g-logo.png" alt="غزلان الخير"
+                style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>لوحة الموظف</div>
+                <div style={{ fontSize: 7, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
+              </div>
             </div>
           </div>
 
-          {/* Logout */}
-          <button onClick={handleLogout}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '7px 13px', cursor: 'pointer', transition: 'all 0.2s' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}>
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-            خروج
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <NotificationBell />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 10, background: `${PRIMARY}08`, border: `1px solid ${PRIMARY}20` }}>
+              <div style={{ width: 26, height: 26, borderRadius: '50%', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
+                {user?.name?.charAt(0)}
+              </div>
+              <div className="emp-hide-mobile">
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
+                <div style={{ fontSize: 8, color: PRIMARY_L }}>موظف</div>
+              </div>
+            </div>
+
+            <button onClick={handleLogout}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 9, padding: '6px 10px', cursor: 'pointer' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}>
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              <span className="emp-hide-mobile">خروج</span>
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
-      <div className="max-w-6xl mx-auto px-6 py-8" style={{ position: 'relative', zIndex: 1 }}>
+      </nav>
+
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px', position: 'relative', zIndex: 1 }}>
 
         {/* Welcome Card */}
-        <div className="rounded-2xl p-6 mb-6 text-white relative overflow-hidden"
-          style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_L} 100%)` }}>
+        <div style={{ borderRadius: 18, padding: '20px 24px', marginBottom: 20, color: 'white', position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_L} 100%)` }}>
           <div style={{ position: 'absolute', top: -50, left: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }}/>
           <div style={{ position: 'absolute', bottom: -40, right: 60, width: 150, height: 150, borderRadius: '50%', background: 'rgba(201,168,76,0.15)' }}/>
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full text-xs font-medium"
-              style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}>
-              <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse"></span>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '5px 12px', borderRadius: 100, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', fontSize: 11, fontWeight: 500 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }}/>
               طلباتك المسندة إليك
             </div>
-            <h1 className="text-xl font-bold mb-1">مرحباً، {user?.name} </h1>
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>هيك ملخص طلباتك اليوم</p>
+            <h1 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>مرحباً، {user?.name}</h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', margin: 0 }}>هيك ملخص طلباتك اليوم</p>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }} className="emp-stats-grid">
           {[
-            { label: 'إجمالي طلباتي', value: total,        color: PRIMARY,   borderColor: PRIMARY },
-            { label: 'جديدة',          value: stats.new,    color: PRIMARY_L, borderColor: PRIMARY_L },
-            { label: 'قيد المراجعة',   value: stats.reviewing, color: '#D97706', borderColor: '#D97706' },
-            { label: 'مقبولة',         value: stats.approved,  color: '#059669', borderColor: '#059669' },
-            { label: 'مرفوضة',         value: stats.rejected,  color: '#DC2626', borderColor: '#DC2626' },
+            { label: 'إجمالي طلباتي', value: total,           color: PRIMARY,   border: PRIMARY },
+            { label: 'جديدة',          value: stats.new,       color: PRIMARY_L, border: PRIMARY_L },
+            { label: 'قيد المراجعة',   value: stats.reviewing, color: '#D97706', border: '#D97706' },
+            { label: 'مقبولة',         value: stats.approved,  color: '#059669', border: '#059669' },
+            { label: 'مرفوضة',         value: stats.rejected,  color: '#DC2626', border: '#DC2626' },
           ].map(stat => (
-            <div key={stat.label} className="rounded-2xl p-4 text-center"
-              style={{
-                background: 'white',
-                border: `1px solid ${stat.borderColor}20`,
-                borderTop: `3px solid ${stat.borderColor}`,
-                boxShadow: `0 2px 12px ${stat.color}10`
-              }}>
-              <div className="text-2xl font-bold mb-1" style={{ color: stat.color }}>{stat.value}</div>
-              <div className="text-xs text-gray-500">{stat.label}</div>
+            <div key={stat.label} style={{ borderRadius: 16, padding: '16px', textAlign: 'center', background: 'white', border: `1px solid ${stat.border}20`, borderTop: `3px solid ${stat.border}`, boxShadow: `0 2px 10px ${stat.color}08` }}>
+              <div style={{ fontSize: 26, fontWeight: 800, color: stat.color, marginBottom: 4 }}>{stat.value}</div>
+              <div style={{ fontSize: 11, color: '#6B7280' }}>{stat.label}</div>
             </div>
           ))}
         </div>
 
         {/* Performance */}
-        <div className="rounded-2xl p-5 mb-5"
-          style={{ background: 'white', border: `1px solid ${PRIMARY}15`, boxShadow: `0 2px 12px ${PRIMARY}08` }}>
-          <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <div className="w-5 h-5 rounded" style={{ background: `${GOLD}20` }}>
-              <svg className="w-5 h-5" fill="none" stroke={GOLD} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-              </svg>
-            </div>
+        <div style={{ borderRadius: 18, padding: '18px 20px', marginBottom: 16, background: 'white', border: `1px solid ${PRIMARY}15`, boxShadow: `0 2px 12px ${PRIMARY}08` }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="16" height="16" fill="none" stroke={GOLD} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
             أدائي
-          </h3>
-          <div className="grid grid-cols-3 gap-6">
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {[
-              { label: 'نسبة القبول',   value: total ? Math.round((stats.approved / total) * 100) : 0, color: '#059669' },
-              { label: 'طلبات معلّقة',  value: total ? Math.round((stats.pending  / total) * 100) : 0, color: '#D97706' },
-              { label: 'نسبة الرفض',    value: total ? Math.round((stats.rejected / total) * 100) : 0, color: '#DC2626' },
+              { label: 'نسبة القبول',  value: total ? Math.round((stats.approved / total) * 100) : 0, color: '#059669' },
+              { label: 'طلبات معلّقة', value: total ? Math.round((stats.pending  / total) * 100) : 0, color: '#D97706' },
+              { label: 'نسبة الرفض',   value: total ? Math.round((stats.rejected / total) * 100) : 0, color: '#DC2626' },
             ].map(p => (
-              <div key={p.label} className="text-center">
-                <div className="text-2xl font-bold mb-1" style={{ color: p.color }}>{p.value}%</div>
-                <div className="text-xs text-gray-400 mb-2">{p.label}</div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${p.value}%`, background: p.color, opacity: 0.75 }}></div>
+              <div key={p.label} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: p.color, marginBottom: 2 }}>{p.value}%</div>
+                <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 8 }}>{p.label}</div>
+                <div style={{ height: 6, background: '#F3F4F6', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 3, width: `${p.value}%`, background: p.color, opacity: 0.75 }}/>
                 </div>
               </div>
             ))}
@@ -280,17 +300,15 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* Filters */}
-        <div className="rounded-2xl p-4 mb-4"
-          style={{ background: 'white', border: `1px solid ${PRIMARY}15` }}>
-          <div className="flex gap-3 flex-wrap items-center">
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="ابحث بالاسم أو الهاتف..."
-              className="flex-1 min-w-48 h-9 border border-gray-200 rounded-xl px-3 text-xs bg-gray-50 focus:outline-none focus:bg-white transition-all text-gray-700"
+        <div style={{ borderRadius: 16, padding: '14px 16px', marginBottom: 14, background: 'white', border: `1px solid ${PRIMARY}15` }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث بالاسم أو الهاتف..."
+              style={{ flex: 1, minWidth: 160, height: 36, border: '1px solid #E5E7EB', borderRadius: 10, padding: '0 12px', fontSize: 12, background: '#F9FAFB', outline: 'none', color: '#374151', boxSizing: 'border-box' }}
+              onFocus={e => { e.target.style.background = 'white'; e.target.style.borderColor = `${PRIMARY}50`; }}
+              onBlur={e => { e.target.style.background = '#F9FAFB'; e.target.style.borderColor = '#E5E7EB'; }}
             />
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="h-9 border border-gray-200 rounded-xl px-3 text-xs bg-white focus:outline-none text-gray-700">
+              style={{ height: 36, border: '1px solid #E5E7EB', borderRadius: 10, padding: '0 12px', fontSize: 12, background: 'white', outline: 'none', color: '#374151' }}>
               <option value="">كل الحالات</option>
               <option value="new">جديد</option>
               <option value="reviewing">قيد المراجعة</option>
@@ -300,79 +318,86 @@ export default function EmployeeDashboard() {
             </select>
             {(search || statusFilter) && (
               <button onClick={() => { setSearch(''); setStatusFilter(''); }}
-                className="text-xs text-red-500 px-3 py-2 rounded-xl hover:bg-red-50 border border-red-100">
+                style={{ fontSize: 11, color: '#DC2626', padding: '7px 12px', borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', cursor: 'pointer' }}>
                 مسح
               </button>
             )}
           </div>
         </div>
 
-        {/* ── تنبيهات الطلبات ── */}
-      {(() => {
-        const staleRequests = requests.filter(r => {
-          const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-          return ['new','reviewing','needs_info'].includes(r.status) && days >= 5;
-        });
-       const followUpToday = requests.filter(r => {
-        const doc = r.case_documentation;
-        if (!doc?.needs_follow_up || !doc?.follow_up_date) return false;
-        if (!['pending','scheduled','rescheduled'].includes(doc.follow_up_status)) return false;
-        const diff = Math.floor((new Date(doc.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        return diff <= 1;
-      });
-        if (!staleRequests.length && !followUpToday.length) return null;
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-            {staleRequests.length > 0 && (
-              <div style={{ borderRadius: 14, padding: '12px 16px', background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <svg width="18" height="18" fill="none" stroke="#D97706" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 6 }}>
-                    ⚠️ {staleRequests.length} طلب بدون تحديث أكثر من 5 أيام
+        {/* Alerts */}
+        {(() => {
+          const staleRequests = requests.filter(r => {
+            const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+            return ['new', 'reviewing', 'needs_info'].includes(r.status) && days >= 5;
+          });
+          const followUpToday = requests.filter(r => {
+            const doc = r.case_documentation;
+            if (!doc?.needs_follow_up || !doc?.follow_up_date) return false;
+            if (!['pending', 'scheduled', 'rescheduled'].includes(doc.follow_up_status)) return false;
+            const diff = Math.floor((new Date(doc.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+            return diff <= 1;
+          });
+          if (!staleRequests.length && !followUpToday.length) return null;
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+              {staleRequests.length > 0 && (
+                <div style={{ borderRadius: 14, padding: '12px 16px', background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <svg width="18" height="18" fill="none" stroke="#D97706" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 6 }}>⚠️ {staleRequests.length} طلب بدون تحديث أكثر من 5 أيام</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {staleRequests.map(r => {
+                        const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+                        return (
+                          <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
+                            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#FEF9C3', border: '1px solid #FDE68A', color: '#92400E', cursor: 'pointer', fontWeight: 600 }}>
+                            {r.full_name} — {days} أيام
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {staleRequests.map(r => {
-                      const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-                      return (
+                </div>
+              )}
+              {followUpToday.length > 0 && (
+                <div style={{ borderRadius: 14, padding: '12px 16px', background: '#EDE9FE', border: '1px solid #DDD6FE', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <svg width="18" height="18" fill="none" stroke="#7C3AED" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', marginBottom: 6 }}>📅 {followUpToday.length} موعد متابعة اليوم أو غداً</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {followUpToday.map(r => (
                         <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
-                          style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#FEF9C3', border: '1px solid #FDE68A', color: '#92400E', cursor: 'pointer', fontWeight: 600 }}>
-                          {r.full_name} — {days} أيام
+                          style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#5B21B6', cursor: 'pointer', fontWeight: 600 }}>
+                          {r.full_name} — {new Date(r.case_documentation.follow_up_date).toLocaleDateString('ar-SA')}
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            {followUpToday.length > 0 && (
-              <div style={{ borderRadius: 14, padding: '12px 16px', background: '#EDE9FE', border: '1px solid #DDD6FE', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <svg width="18" height="18" fill="none" stroke="#7C3AED" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', marginBottom: 6 }}>
-                    📅 {followUpToday.length} موعد متابعة اليوم أو غداً
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {followUpToday.map(r => (
-                      <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
-                        style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#5B21B6', cursor: 'pointer', fontWeight: 600 }}>
-                        {r.full_name} — {new Date(r.follow_up_date).toLocaleDateString('ar-SA')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
+              )}
+            </div>
+          );
+        })()}
 
         {/* Table */}
-        <div className="rounded-2xl overflow-hidden"
-          style={{ background: 'white', border: `1px solid ${PRIMARY}15`, boxShadow: `0 2px 12px ${PRIMARY}08` }}>
+        <div style={{ borderRadius: 18, overflow: 'hidden', background: 'white', border: `1px solid ${PRIMARY}15`, boxShadow: `0 2px 12px ${PRIMARY}08` }}>
           {renderTable()}
         </div>
 
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 640px) {
+          .emp-hide-mobile { display: none !important; }
+          .emp-show-mobile { display: flex !important; }
+          .emp-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (min-width: 641px) {
+          .emp-stats-grid { grid-template-columns: repeat(5, 1fr) !important; }
+        }
+      `}</style>
     </div>
   );
 }

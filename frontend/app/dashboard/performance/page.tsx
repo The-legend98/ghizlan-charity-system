@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { exportPerformance } from '@/lib/exportExcel';
+import { nav } from 'framer-motion/m';
 
 
 const PRIMARY   = '#1B6CA8';
@@ -94,41 +95,58 @@ export default function PerformancePage() {
       <BgPattern />
 
       {/* Navbar */}
-      <nav style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50 }}>
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => router.push('/dashboard/manager')}
-              className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
-              </svg>
-            </button>
-            <div>
-              <div className="text-sm font-bold text-gray-900">لوحة أداء الموظفين</div>
-              <div className="text-xs" style={{ color: PRIMARY_L }}>مؤسسة غزلان الخير</div>
+    <nav style={{ background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50 }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', boxSizing: 'border-box' }}>
+
+        {/* السهم + اللوغو */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, minWidth: 0 }}>
+          <button onClick={() => router.push('/dashboard/manager')}
+            style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${PRIMARY}20`, background: `${PRIMARY}06`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}12`; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}06`; }}>
+            <svg width="14" height="14" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <img src="/g-logo.png" alt="غزلان الخير"
+              style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>لوحة أداء الموظفين</div>
+              <div style={{ fontSize: 7, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2"
-              style={{ background: `${GOLD}15`, border: `1px solid ${GOLD}30` }}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #E8C96A)` }}>
-                {user?.name?.charAt(0)}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-gray-900">{user?.name}</div>
-                <div className="text-xs" style={{ color: GOLD }}>مدير</div>
-              </div>
-            </div>
-            <button onClick={handleLogout}
-              className="text-xs px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 border border-red-100 transition-all">
-              خروج
-            </button>
-         
-          </div>
-          
         </div>
-      </nav>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {/* User Badge — بدون نص على الموبايل */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 10, background: `${GOLD}15`, border: `1px solid ${GOLD}30` }}>
+            <div style={{ width: 26, height: 26, borderRadius: '50%', background: `linear-gradient(135deg, ${GOLD}, #E8C96A)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
+              {user?.name?.charAt(0)}
+            </div>
+            <div className="hide-mobile">
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
+              <div style={{ fontSize: 8, color: GOLD }}>مدير</div>
+            </div>
+          </div>
+          <button onClick={handleLogout}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 9, padding: '6px 10px', cursor: 'pointer' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}>
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span className="hide-mobile">خروج</span>
+          </button>
+        </div>
+
+      </div>
+    </nav>
+    <style>{`
+      @media (max-width: 480px) {
+        .hide-mobile { display: none !important; }
+      }
+    `}</style>
 
       <div className="max-w-6xl mx-auto px-6 py-8" style={{ position: 'relative', zIndex: 1 }}>
 
