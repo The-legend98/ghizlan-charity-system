@@ -5,6 +5,8 @@ import { Suspense, useState, useRef } from 'react';
 import { motion, useScroll, useSpring, AnimatePresence, Variants } from 'framer-motion';
 import api from '@/lib/axios';
 import { useLang } from '@/app/providers/LangProvider';
+import Navbar from '@/components/Navbar';
+
 
 const PRIMARY   = '#1B6CA8';
 const PRIMARY_L = '#4AACCD';
@@ -109,16 +111,7 @@ function ConfirmContent() {
       <ScrollProgress />
 
       {/* Navbar */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
-        <div className="max-w-2xl mx-auto px-6 py-3 flex items-center gap-3 cursor-pointer" onClick={() => router.push('/')}>
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
-            style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>غ</div>
-          <div>
-            <div className="text-sm font-bold text-gray-900">{lang === 'ar' ? 'مؤسسة غزلان الخير' : 'Ghozlan Alkhair Foundation'}</div>
-            <div className="text-xs" style={{ color: PRIMARY_L }}>{lang === 'ar' ? 'Ghozlan Alkhair Foundation' : 'مؤسسة غزلان الخير'}</div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="flex-1 px-4 py-10">
         <div className="max-w-md mx-auto">

@@ -82,6 +82,53 @@ const Badge = ({ label, color, bg }: { label: string; color: string; bg: string 
   </span>
 );
 
+// ═══ ASSIGN EMPLOYEE SECTION ═══
+function AssignEmployeeSection({ requestId, currentEmployee, onAssigned }: {
+  requestId: string; currentEmployee: any; onAssigned: () => void;
+}) {
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [selected, setSelected]   = useState('');
+  const [saving, setSaving]       = useState(false);
+
+  useEffect(() => {
+    api.get('/users').then(res => {
+      setEmployees((res.data.data || res.data).filter((u: any) => u.role === 'employee' && u.is_active));
+    }).catch(() => {});
+  }, []);
+
+  const handleAssign = async () => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await api.patch(`/requests/${requestId}/assign`, { assigned_to: selected });
+      onAssigned();
+      setSelected('');
+    } catch { alert('حدث خطأ أثناء التعيين'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 12, background: `${PRIMARY}06`, border: `1px solid ${PRIMARY}20` }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 8 }}>
+        الموظف الحالي: <span style={{ color: PRIMARY, fontWeight: 700 }}>{currentEmployee?.name || 'غير معيّن'}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <select value={selected} onChange={e => setSelected(e.target.value)}
+          style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${PRIMARY}30`, padding: '0 10px', fontSize: 12, background: 'white', color: '#111827', outline: 'none' }}>
+          <option value="">اختر موظفاً...</option>
+          {employees.map(e => (
+            <option key={e.id} value={e.id}>{e.name}</option>
+          ))}
+        </select>
+        <button onClick={handleAssign} disabled={!selected || saving}
+          style={{ padding: '0 14px', height: 36, borderRadius: 9, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, color: 'white', fontSize: 12, fontWeight: 700, border: 'none', cursor: !selected || saving ? 'not-allowed' : 'pointer', opacity: !selected || saving ? 0.6 : 1 }}>
+          {saving ? '...' : 'تعيين'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const handlePrint = async (request: any, documentation: any) => {
   const status = statusMap[request?.status] || statusMap.new;
 
@@ -134,7 +181,6 @@ const handlePrint = async (request: any, documentation: any) => {
   .page { max-width:794px; margin:0 auto; padding:24px; }
   .header { display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:3px solid #1B6CA8; margin-bottom:20px; }
   .logo-area { display:flex; align-items:center; gap:12px; }
-  .logo-circle { width:50px; height:50px; border-radius:50%; background:#1B6CA8; color:white; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; flex-shrink:0; }
   .org-name { font-size:17px; font-weight:900; color:#1B6CA8; }
   .org-sub { font-size:10px; color:#6B7280; margin-top:2px; letter-spacing:1px; }
   .ref-area { text-align:left; }
@@ -167,11 +213,9 @@ const handlePrint = async (request: any, documentation: any) => {
 <body>
 <button class="print-btn no-print" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
 <div class="page">
-
   <div class="header">
     <div class="logo-area">
-      <img src="http://192.168.2.102:3000/g-logo.png" 
-          style="width:50px;height:50px;object-fit:contain;" 
+      <img src="http://192.168.2.102:3000/g-logo.png" style="width:50px;height:50px;object-fit:contain;"
           onerror="this.style.display='none';document.getElementById('fallback-logo').style.display='flex'"/>
       <div id="fallback-logo" style="display:none;width:50px;height:50px;border-radius:50%;background:#1B6CA8;color:white;align-items:center;justify-content:center;font-size:24px;font-weight:900;flex-shrink:0;">غ</div>
       <div>
@@ -232,8 +276,7 @@ const handlePrint = async (request: any, documentation: any) => {
         </div>`;
       }).join('')}
     </div>
-  </div>
-  ` : ''}
+  </div>` : ''}
 
   ${documentation ? `
   <div class="section">
@@ -255,11 +298,9 @@ const handlePrint = async (request: any, documentation: any) => {
               <div class="img-name">${f.file_name}</div>
             </div>`;
           }).join('')}
-        </div>
-      ` : ''}
+        </div>` : ''}
     </div>
-  </div>
-  ` : ''}
+  </div>` : ''}
 
   ${request?.status_logs?.length > 0 ? `
   <div class="section">
@@ -272,10 +313,8 @@ const handlePrint = async (request: any, documentation: any) => {
           ${log.note ? `<div style="font-size:10px;color:#6B7280;margin-top:2px">${log.note}</div>` : ''}
           <div style="font-size:9px;color:#9CA3AF;margin-top:2px">${log.changed_by?.name} — ${new Date(log.created_at).toLocaleDateString('ar-SA')}</div>
         </div>
-      </div>
-    `).join('')}
-  </div>
-  ` : ''}
+      </div>`).join('')}
+  </div>` : ''}
 
   ${request?.notes?.length > 0 ? `
   <div class="section">
@@ -284,10 +323,8 @@ const handlePrint = async (request: any, documentation: any) => {
       <div class="note-item">
         <div style="font-size:9px;color:#9CA3AF;margin-bottom:3px">${note.user?.name} — ${new Date(note.created_at).toLocaleDateString('ar-SA')}</div>
         <div style="font-size:11px;color:#374151">${note.content}</div>
-      </div>
-    `).join('')}
-  </div>
-  ` : ''}
+      </div>`).join('')}
+  </div>` : ''}
 
   <div class="footer">
     <div>مؤسسة غزلان الخير الإنسانية — وثيقة داخلية سرية</div>
@@ -296,7 +333,6 @@ const handlePrint = async (request: any, documentation: any) => {
 </div>
 </body>
 </html>`);
-
   win.document.close();
 };
 
@@ -337,7 +373,7 @@ function DocumentationModal({ requestId, onClose, onSuccess }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-      <div className="doc-modal w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl" style={{ background: 'white', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl" style={{ background: 'white', maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="px-6 py-4 flex items-center justify-between" style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
           <div>
             <div className="text-sm font-bold text-white">توثيق الحالة</div>
@@ -366,28 +402,28 @@ function DocumentationModal({ requestId, onClose, onSuccess }: {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold   mb-1.5" style={{ color: '#111827' }}>المبلغ المقدم (اختياري)</label>
+              <label className="block text-xs font-bold mb-1.5" style={{ color: '#111827' }}>المبلغ المقدم (اختياري)</label>
               <input type="number" value={form.amount_delivered} onChange={e => setForm(f => ({ ...f, amount_delivered: e.target.value }))} placeholder="0"
                 className="w-full h-10 rounded-xl px-3 text-sm focus:outline-none" style={{ border: `1.5px solid ${PRIMARY}30`, background: 'white' }}/>
             </div>
             <div>
-              <label className="block text-xs font-bold  mb-1.5" style={{ color: '#111827' }}>الخدمة المقدمة (اختياري)</label>
+              <label className="block text-xs font-bold mb-1.5" style={{ color: '#111827' }}>الخدمة المقدمة (اختياري)</label>
               <input value={form.service_delivered} onChange={e => setForm(f => ({ ...f, service_delivered: e.target.value }))} placeholder="مثال: عملية جراحية..."
                 className="w-full h-10 rounded-xl px-3 text-sm focus:outline-none" style={{ border: `1.5px solid ${PRIMARY}30`, background: 'white' }}/>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold  mb-1.5" style={{ color: '#111827' }}>تاريخ تقديم المساعدة *</label>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: '#111827' }}>تاريخ تقديم المساعدة *</label>
             <input type="date" value={form.delivery_date} onChange={e => setForm(f => ({ ...f, delivery_date: e.target.value }))}
               className="w-full h-10 rounded-xl px-3 text-sm focus:outline-none" style={{ border: `1.5px solid ${PRIMARY}30`, background: 'white' }}/>
           </div>
           <div>
-            <label className="block text-xs font-bold  mb-1.5" style={{ color: '#111827' }}>ملاحظات (اختياري)</label>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: '#111827' }}>ملاحظات (اختياري)</label>
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="أي تفاصيل إضافية..."
               className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none resize-none" style={{ border: `1.5px solid ${PRIMARY}30`, background: 'white' }}/>
           </div>
           <div>
-            <label className="block text-xs font-bold  mb-1.5" style={{ color: '#111827' }}>صور وملفات إثبات (اختياري)</label>
+            <label className="block text-xs font-bold mb-1.5" style={{ color: '#111827' }}>صور وملفات إثبات (اختياري)</label>
             <div className="rounded-xl border-2 border-dashed p-4 text-center cursor-pointer hover:bg-gray-50"
               style={{ borderColor: `${PRIMARY}30` }} onClick={() => document.getElementById('doc-files')?.click()}>
               <input id="doc-files" type="file" multiple accept="image/*,.pdf" className="hidden" onChange={e => setFiles(Array.from(e.target.files || []))}/>
@@ -571,78 +607,73 @@ export default function RequestDetailPage() {
 
       {/* Navbar */}
       <nav style={{ background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 40 }}>
-  <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-    
-    {/* يسار */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-      <button onClick={() => router.back()}
-        style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${PRIMARY}20`, background: `${PRIMARY}06`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <svg width="15" height="15" fill="none" stroke={PRIMARY} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
-      </button>
-      <img src="/g-logo.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>تفاصيل الطلب #{request?.id}</div>
-        <div style={{ fontSize: 9, fontWeight: 600, color: PRIMARY_L }}>{request?.ref_number}</div>
-      </div>
-    </div>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
 
-    {/* يمين — كومبيوتر */}
-    <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8 }}>
-      <Badge label={status.label} color={status.color} bg={status.bg} />
-      <button
-        onClick={async () => { setPrinting(true); await handlePrint(request, documentation); setPrinting(false); }}
-        disabled={printing}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '7px 13px', borderRadius: 10, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, color: PRIMARY, cursor: printing ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
-        {printing
-          ? <><span style={{ width: 14, height: 14, border: `2px solid ${PRIMARY}40`, borderTopColor: PRIMARY, borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }}/>جاري التحضير...</>
-          : <><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>طباعة PDF</>
-        }
-      </button>
-      {request?.status === 'approved' && !documentation && (
-        <button onClick={() => setShowDocModal(true)}
-          style={{ fontSize: 12, padding: '7px 14px', borderRadius: 10, background: '#059669', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-          وثّق الحالة
-        </button>
-      )}
-      <button onClick={() => setShowStatusForm(!showStatusForm)}
-        style={{ fontSize: 12, padding: '7px 14px', borderRadius: 10, color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
-        {showStatusForm ? 'إغلاق' : 'تغيير الحالة'}
-      </button>
-    </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <button onClick={() => router.back()}
+              style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${PRIMARY}20`, background: `${PRIMARY}06`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="15" height="15" fill="none" stroke={PRIMARY} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <img src="/g-logo.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>تفاصيل الطلب #{request?.id}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: PRIMARY_L }}>{request?.ref_number}</div>
+            </div>
+          </div>
 
-    {/* يمين — موبايل */}
-    <div className="flex md:hidden" style={{ alignItems: 'center', gap: 6, flexShrink: 0 }}>
-      <Badge label={status.label} color={status.color} bg={status.bg} />
-      <button
-        onClick={async () => { setPrinting(true); await handlePrint(request, documentation); setPrinting(false); }}
-        disabled={printing}
-        title="طباعة PDF"
-        style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, color: PRIMARY, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-      </button>
-      {request?.status === 'approved' && !documentation && (
-        <button onClick={() => setShowDocModal(true)}
-          style={{ fontSize: 11, padding: '6px 10px', borderRadius: 8, background: '#059669', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-          وثّق
-        </button>
-      )}
-      <button onClick={() => setShowStatusForm(!showStatusForm)}
-        style={{ fontSize: 11, padding: '6px 10px', borderRadius: 8, color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
-        {showStatusForm ? 'إغلاق' : 'الحالة'}
-      </button>
-    </div>
+          {/* Desktop */}
+          <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8 }}>
+            <Badge label={status.label} color={status.color} bg={status.bg} />
+            <button onClick={async () => { setPrinting(true); await handlePrint(request, documentation); setPrinting(false); }} disabled={printing}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '7px 13px', borderRadius: 10, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, color: PRIMARY, cursor: printing ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
+              {printing
+                ? <><span style={{ width: 14, height: 14, border: `2px solid ${PRIMARY}40`, borderTopColor: PRIMARY, borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }}/>جاري التحضير...</>
+                : <><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>طباعة PDF</>
+              }
+            </button>
+            {request?.status === 'approved' && !documentation && (
+              <button onClick={() => setShowDocModal(true)}
+                style={{ fontSize: 12, padding: '7px 14px', borderRadius: 10, background: '#059669', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                وثّق الحالة
+              </button>
+            )}
+            <button onClick={() => setShowStatusForm(!showStatusForm)}
+              style={{ fontSize: 12, padding: '7px 14px', borderRadius: 10, color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
+              {showStatusForm ? 'إغلاق' : 'تغيير الحالة'}
+            </button>
+          </div>
 
-  </div>
-</nav>
+          {/* Mobile */}
+          <div className="flex md:hidden" style={{ alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <Badge label={status.label} color={status.color} bg={status.bg} />
+            <button onClick={async () => { setPrinting(true); await handlePrint(request, documentation); setPrinting(false); }} disabled={printing}
+              style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, color: PRIMARY, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            </button>
+            {request?.status === 'approved' && !documentation && (
+              <button onClick={() => setShowDocModal(true)}
+                style={{ fontSize: 11, padding: '6px 10px', borderRadius: 8, background: '#059669', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                وثّق
+              </button>
+            )}
+            <button onClick={() => setShowStatusForm(!showStatusForm)}
+              style={{ fontSize: 11, padding: '6px 10px', borderRadius: 8, color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
+              {showStatusForm ? 'إغلاق' : 'الحالة'}
+            </button>
+          </div>
+
+        </div>
+      </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-6" style={{ position: 'relative', zIndex: 1 }}>
 
         {showStatusForm && (
-        <div className="rounded-2xl p-5 mb-5" style={{ background: 'white', border: `2px solid ${PRIMARY}30`, boxShadow: `0 4px 20px ${PRIMARY}15`, colorScheme: 'light' as const }}>
+          <div className="rounded-2xl p-5 mb-5" style={{ background: 'white', border: `2px solid ${PRIMARY}30`, boxShadow: `0 4px 20px ${PRIMARY}15`, colorScheme: 'light' as const }}>
             <h3 className="text-sm font-bold text-gray-900 mb-4">تحديث حالة الطلب</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: '#111827' }}>الحالة الجديدة</label>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: '#111827' }}>الحالة الجديدة</label>
                 <select value={statusForm.status} onChange={e => setStatusForm(f => ({ ...f, status: e.target.value }))}
                   className="w-full h-10 border-2 rounded-xl px-3 text-sm text-gray-900 bg-white focus:outline-none" style={{ borderColor: `${PRIMARY}30` }}>
                   <option value="new">جديد</option>
@@ -653,7 +684,7 @@ export default function RequestDetailPage() {
                 </select>
               </div>
               <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: '#111827' }}>الأولوية</label>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: '#111827' }}>الأولوية</label>
                 <select value={statusForm.priority} onChange={e => setStatusForm(f => ({ ...f, priority: e.target.value }))}
                   className="w-full h-10 border-2 rounded-xl px-3 text-sm text-gray-900 bg-white focus:outline-none" style={{ borderColor: `${PRIMARY}30` }}>
                   <option value="normal">عادية</option>
@@ -662,10 +693,10 @@ export default function RequestDetailPage() {
                 </select>
               </div>
               <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: '#111827' }}>ملاحظة (اختياري)</label>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: '#111827' }}>ملاحظة (اختياري)</label>
                 <input value={statusForm.note} onChange={e => setStatusForm(f => ({ ...f, note: e.target.value }))} placeholder="سبب التغيير..."
-                className="w-full h-10 border-2 rounded-xl px-3 text-sm focus:outline-none"
-                style={{ borderColor: `${PRIMARY}30`, background: 'white', color: '#111827', colorScheme: 'light' }}/>
+                  className="w-full h-10 border-2 rounded-xl px-3 text-sm focus:outline-none"
+                  style={{ borderColor: `${PRIMARY}30`, background: 'white', color: '#111827', colorScheme: 'light' as const }}/>
               </div>
             </div>
             <div className="flex gap-3">
@@ -716,6 +747,7 @@ export default function RequestDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-4">
+
             <InfoCard num="١" title="البيانات الشخصية" color={PRIMARY}>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <InfoItem label="الاسم الكامل"   value={request?.full_name} />
@@ -728,6 +760,14 @@ export default function RequestDetailPage() {
                 <InfoItem label="العنوان"         value={request?.address || '—'} />
                 <InfoItem label="الموظف المسؤول" value={request?.assigned_to?.name || 'غير معيّن'} />
               </div>
+              {/* ✅ زر تعيين موظف — للمدير فقط */}
+              {user?.role === 'manager' && (
+                <AssignEmployeeSection
+                  requestId={id}
+                  currentEmployee={request?.assigned_to}
+                  onAssigned={fetchRequest}
+                />
+              )}
             </InfoCard>
 
             <InfoCard num="٢" title="الوضع العائلي والمالي" color="#059669">
