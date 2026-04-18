@@ -68,6 +68,9 @@ Route::middleware('auth:sanctum')->group(function () {
         $mime = mime_content_type($path);
         return response()->file($path, ['Content-Type' => $mime]);
     });
+    // تعيين الطلبات للموظفين (للمدير فقط)
+    Route::patch('/requests/{id}/assign', [RequestController::class, 'assign']);
+
 
 
 });

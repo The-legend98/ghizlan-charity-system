@@ -54,19 +54,40 @@ class RequestController extends Controller
 
         $data['ref_number'] = $refNumber;
 
-        // توزيع ذكي — اختر الموظف الأقل طلبات
-        $employee = \App\Models\User::where('role', 'employee')
+        // توزيع الطلبات بشكل دائري بين الموظفين النشطين
+        $employees = \App\Models\User::where('role', 'employee')
             ->where('is_active', true)
-            ->withCount(['assignedRequests' => function ($q) {
-                $q->whereIn('status', ['new', 'reviewing', 'needs_info']);
-            }])
-            ->orderBy('assigned_requests_count', 'asc')
-            ->first();
+            ->orderBy('id', 'asc')
+            ->get();
 
-        if ($employee) {
-            $data['assigned_to'] = $employee->id;
+        $employee = null;
+
+        if ($employees->count() > 0) {
+            // اقرأ آخر موظف أُسند إليه طلب
+            $lastAssignedId = \App\Models\Setting::where('key', 'last_assigned_employee_id')
+                ->value('value');
+
+            // ابحث عن الموظف اللي بعده
+            $nextEmployee = null;
+
+            if ($lastAssignedId) {
+                // ابحث عن الموظف اللي بعد الأخير
+                $nextEmployee = $employees->first(function ($e) use ($lastAssignedId) {
+                    return $e->id > (int) $lastAssignedId;
+                });
+            }
+
+            // إذا ما لقينا أحد بعده، ارجع للأول (دورة جديدة)
+            $employee = $nextEmployee ?? $employees->first();
+
+            // احفظ آخر موظف أُسند إليه
+            \App\Models\Setting::updateOrCreate(
+                ['key' => 'last_assigned_employee_id'],
+                ['value' => $employee->id]
+            );
         }
-
+        
+        if ($employee) {$data['assigned_to'] = $employee->id;}
         $request = Request::create($data);
 
         if ($employee) {
@@ -276,5 +297,22 @@ class RequestController extends Controller
         'message' => 'تم تحديث المتابعة بنجاح',
         'request' => $request,
     ]);
+}
+
+public function assign(HttpRequest $http, $id)
+{
+    $user = $http->user();
+    if ($user->role !== 'manager') {
+        return response()->json(['message' => 'غير مصرح'], 403);
+    }
+
+    $http->validate([
+        'assigned_to' => 'required|exists:users,id',
+    ]);
+
+    $request = Request::findOrFail($id);
+    $request->update(['assigned_to' => $http->assigned_to]);
+
+    return response()->json(['message' => 'تم تعيين الموظف بنجاح']);
 }
 }
