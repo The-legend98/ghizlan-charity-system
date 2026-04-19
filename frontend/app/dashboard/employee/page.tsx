@@ -60,7 +60,7 @@ export default function EmployeeDashboard() {
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token    = localStorage.getItem('token');
-    if (!token || !userData) { router.push('/dashboard/login'); return; }
+    if (!token || !userData) { router.push('/login'); return; }
     const parsed = JSON.parse(userData);
     if (parsed.role === 'manager') { router.push('/dashboard/manager'); return; }
     setUser(parsed);
@@ -81,7 +81,7 @@ export default function EmployeeDashboard() {
       setRequests(res.data.data || []);
       setPagination(res.data);
     } catch {
-      router.push('/dashboard/login');
+      router.push('/login');
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ export default function EmployeeDashboard() {
     await api.post('/logout');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    router.push('/dashboard/login');
+    router.push('/login');
   };
 
   const total = pagination?.total || 0;

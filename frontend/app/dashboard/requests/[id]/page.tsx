@@ -507,7 +507,7 @@ export default function RequestDetailPage() {
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token    = localStorage.getItem('token');
-    if (!token || !userData) { router.push('/dashboard/login'); return; }
+    if (!token || !userData) { router.push('/login'); return; }
     setUser(JSON.parse(userData));
     fetchRequest();
     fetchDocumentation();

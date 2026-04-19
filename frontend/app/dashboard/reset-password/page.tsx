@@ -89,7 +89,7 @@ function ResetPasswordContent() {
               </div>
               <h2 className="text-base font-bold text-gray-900 mb-2">تم تغيير كلمة المرور!</h2>
               <p className="text-sm text-gray-500 mb-6">يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة</p>
-              <button onClick={() => router.push('/dashboard/login')}
+              <button onClick={() => router.push('/login')}
                 className="w-full h-11 text-white rounded-xl text-sm font-semibold"
                 style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
                 تسجيل الدخول
@@ -201,7 +201,7 @@ function ResetPasswordContent() {
               </form>
 
               <div className="mt-5 pt-5 text-center" style={{ borderTop: `1px solid ${PRIMARY}12` }}>
-                <button onClick={() => router.push('/dashboard/login')}
+                <button onClick={() => router.push('/login')}
                   className="text-xs font-medium flex items-center justify-center gap-1.5 w-full"
                   style={{ color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer' }}>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>

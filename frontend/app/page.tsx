@@ -599,7 +599,7 @@ export default function HomePage() {
                     onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
                   >{l.label}</button>
                 ))}
-                <button onClick={() => router.push('/dashboard/login')}
+                <button onClick={() => router.push('/login')}
                   style={{ fontSize: 12, color: PRIMARY_L, background: `${PRIMARY_L}10`, border: `1px solid ${PRIMARY_L}25`, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500 }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY_L}22`; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY_L}10`; }}

@@ -66,7 +66,7 @@ function RequestsPageContent() {
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token    = localStorage.getItem('token');
-    if (!token || !userData) { router.push('/dashboard/login'); return; }
+    if (!token || !userData) { router.push('/login'); return; }
     setUser(JSON.parse(userData));
   }, []);
 
@@ -85,7 +85,7 @@ function RequestsPageContent() {
       const res = await api.get(`/requests?${params.toString()}`);
       setRequests(res.data.data || []);
       setPagination(res.data);
-    } catch { router.push('/dashboard/login'); }
+    } catch { router.push('/login'); }
     finally { setLoading(false); }
   };
 
@@ -121,7 +121,7 @@ function RequestsPageContent() {
     await api.post('/logout');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    router.push('/dashboard/login');
+    router.push('/login');
   };
 
   const hasFilters = !!(filters.status || filters.region || filters.assistance_type || filters.priority || filters.search);

@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-gray-500 mb-6 leading-relaxed">
                 تحقق من بريدك الإلكتروني وافتح رابط إعادة تعيين كلمة المرور
               </p>
-              <button onClick={() => router.push('/dashboard/login')}
+              <button onClick={() => router.push('/login')}
                 className="w-full h-11 text-white rounded-xl text-sm font-semibold"
                 style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
                 العودة لتسجيل الدخول
@@ -131,7 +131,7 @@ export default function ForgotPasswordPage() {
               </form>
 
               <div className="mt-5 pt-5 text-center" style={{ borderTop: `1px solid ${PRIMARY}12` }}>
-                <button onClick={() => router.push('/dashboard/login')}
+                <button onClick={() => router.push('/login')}
                   className="text-xs font-medium transition-all flex items-center justify-center gap-1.5 w-full"
                   style={{ color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer' }}>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>

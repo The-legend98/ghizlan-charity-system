@@ -45,7 +45,7 @@ export default function PerformancePage() {
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token    = localStorage.getItem('token');
-    if (!token || !userData) { router.push('/dashboard/login'); return; }
+    if (!token || !userData) { router.push('/login'); return; }
     const parsed = JSON.parse(userData);
     if (parsed.role !== 'manager') { router.push('/dashboard/requests'); return; }
     setUser(parsed);
@@ -57,7 +57,7 @@ export default function PerformancePage() {
       const res = await api.get('/users/performance');
       setEmployees(res.data);
     } catch {
-      router.push('/dashboard/login');
+      router.push('/login');
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function PerformancePage() {
     await api.post('/logout');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    router.push('/dashboard/login');
+    router.push('/login');
   };
 
   if (loading) return (

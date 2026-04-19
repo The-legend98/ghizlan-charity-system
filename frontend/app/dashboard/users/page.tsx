@@ -47,7 +47,7 @@ export default function UsersPage() {
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token    = localStorage.getItem('token');
-    if (!token || !userData) { router.push('/dashboard/login'); return; }
+    if (!token || !userData) { router.push('/login'); return; }
     const parsed = JSON.parse(userData);
     if (parsed.role !== 'manager') { router.push('/dashboard/requests'); return; }
     setUser(parsed);
@@ -59,7 +59,7 @@ export default function UsersPage() {
       const res = await api.get('/users');
       setUsers(res.data);
     } catch {
-      router.push('/dashboard/login');
+      router.push('/login');
     } finally {
       setLoading(false);
     }
@@ -109,7 +109,7 @@ export default function UsersPage() {
     await api.post('/logout');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    router.push('/dashboard/login');
+    router.push('/login');
   };
 
   const inputStyle: React.CSSProperties = {
