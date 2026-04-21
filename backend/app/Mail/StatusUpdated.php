@@ -28,21 +28,14 @@ class StatusUpdated extends Mailable
     }
 
     public function content(): Content
-    {
-        return new Content(
-            view: 'emails.status-updated',
-        with: [
-            'logoUrl' => 'cid:logo',
-        ]
-        );
-    }
+{
+    return new Content(
+        view: 'emails.request-confirmation',
+    );
+}
 
-    public function attachments(): array
-    {
-        return [
-            Attachment::fromPath(public_path('g-logo.png'))
-                ->as('logo')
-                ->withMime('image/png'),
-        ];
-    }
+public function attachments(): array
+{
+    return [];
+}
 }

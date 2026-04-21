@@ -26,22 +26,15 @@ class RequestConfirmation extends Mailable
         );
     }
 
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.request-confirmation',
-            with: [
-            'logoUrl' => 'cid:logo',
-        ]
-        );
-    }
+   public function content(): Content
+{
+    return new Content(
+        view: 'emails.request-confirmation',
+    );
+}
 
-    public function attachments(): array
-    {
-        return [
-            Attachment::fromPath(public_path('g-logo.png'))
-                ->as('logo')
-                ->withMime('image/png'),
-        ];
-    }
+public function attachments(): array
+{
+    return [];
+}
 }
