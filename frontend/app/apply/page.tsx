@@ -112,7 +112,7 @@ const onSubmit = async (data: RequestForm) => {
     children: lang === 'ar' ? 'عدد الأطفال' : 'Number of Children',
     income: lang === 'ar' ? 'الدخل الشهري (ليرة سورية)' : 'Monthly Income (SYP)',
     housing: lang === 'ar' ? 'وضع السكن' : 'Housing Status',
-    housingOpts: lang === 'ar' ? ['اختر وضع السكن', 'ملك', 'إيجار', 'أخرى'] : ['Select Housing', 'Owned', 'Rented', 'Other'],
+    housingOpts: lang === 'ar' ? ['اختر وضع السكن', 'ملك', 'إيجار', 'اُخرى'] : ['Select Housing', 'Owned', 'Rented', 'Other'],
     housingDetails: lang === 'ar' ? 'وضّح وضع سكنك' : 'Describe your housing',
     housingDetailsPh: lang === 'ar' ? 'اشرح وضع سكنك...' : 'Describe your housing situation...',
     assistanceType: lang === 'ar' ? 'نوع المساعدة' : 'Type of Assistance',

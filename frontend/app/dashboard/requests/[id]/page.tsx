@@ -89,6 +89,7 @@ function AssignEmployeeSection({ requestId, currentEmployee, onAssigned }: {
   const [employees, setEmployees] = useState<any[]>([]);
   const [selected, setSelected]   = useState('');
   const [saving, setSaving]       = useState(false);
+  
 
   useEffect(() => {
     api.get('/users').then(res => {
@@ -504,6 +505,25 @@ export default function RequestDetailPage() {
   const [updatingFollowUp, setUpdatingFollowUp] = useState(false);
   const [printing, setPrinting]                 = useState(false);
 
+  const [showDoneConfirm, setShowDoneConfirm] = useState(false);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState('');
+
+  // ترتيب الحالات
+const statusOrder: Record<string, number> = {
+  new: 0, reviewing: 1, needs_info: 2, approved: 3, rejected: 3,
+};
+
+// الحالات المتاحة بناءً على الحالة الحالية
+const getAvailableStatuses = (current: string) => {
+  const currentOrder = statusOrder[current] ?? 0;
+  return ['new', 'reviewing', 'needs_info', 'approved', 'rejected'].filter(s => {
+    if (s === current) return true;
+    return statusOrder[s] > currentOrder;
+  });
+};
+
+
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token    = localStorage.getItem('token');
@@ -533,14 +553,24 @@ export default function RequestDetailPage() {
 
   const handleUpdateStatus = async () => {
     if (!statusForm.status) return;
-    setUpdating(true);
-    try {
-      await api.patch(`/requests/${id}/status`, statusForm);
-      await fetchRequest();
-      setShowStatusForm(false);
-    } catch (err: any) { alert(err.response?.data?.message || 'حدث خطأ'); }
-    finally { setUpdating(false); }
+    // إذا approved أو rejected — popup تأكيد
+    if (['approved', 'rejected'].includes(statusForm.status)) {
+      setPendingStatus(statusForm.status);
+      setShowStatusConfirm(true);
+      return;
+    }
+    await doUpdateStatus();
   };
+
+  const doUpdateStatus = async () => {
+  setUpdating(true);
+  try {
+    await api.patch(`/requests/${id}/status`, statusForm);
+    await fetchRequest();
+    setShowStatusForm(false);
+  } catch (err: any) { alert(err.response?.data?.message || 'حدث خطأ'); }
+  finally { setUpdating(false); }
+};
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
@@ -668,6 +698,37 @@ export default function RequestDetailPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-6" style={{ position: 'relative', zIndex: 1 }}>
 
+        {/* ✅ Confirm Popup للحالات النهائية */}
+        {showStatusConfirm && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+            <div style={{ background: 'white', borderRadius: 18, padding: '28px 24px', maxWidth: 380, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }} dir="rtl">
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: pendingStatus === 'approved' ? '#D1FAE5' : '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg width="24" height="24" fill="none" stroke={pendingStatus === 'approved' ? '#059669' : '#DC2626'} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', textAlign: 'center', marginBottom: 10 }}>
+                {pendingStatus === 'approved' ? 'تأكيد قبول الطلب' : 'تأكيد رفض الطلب'}
+              </div>
+              <div style={{ fontSize: 12, color: '#6B7280', textAlign: 'center', lineHeight: 1.8, marginBottom: 24 }}>
+                ⚠️ بعد تأكيد <strong style={{ color: pendingStatus === 'approved' ? '#059669' : '#DC2626' }}>
+                  {pendingStatus === 'approved' ? 'القبول' : 'الرفض'}
+                </strong>، لن تتمكن من تغيير الحالة مرة أخرى.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <button onClick={() => setShowStatusConfirm(false)}
+                  style={{ padding: '10px', borderRadius: 10, border: '1.5px solid #E5E7EB', background: 'white', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  إلغاء
+                </button>
+                <button onClick={() => { setShowStatusConfirm(false); doUpdateStatus(); }} disabled={updating}
+                  style={{ padding: '10px', borderRadius: 10, border: 'none', background: pendingStatus === 'approved' ? '#059669' : '#DC2626', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: updating ? 0.6 : 1 }}>
+                  {updating ? '...' : `نعم، ${pendingStatus === 'approved' ? 'قبول' : 'رفض'}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showStatusForm && (
           <div className="rounded-2xl p-5 mb-5" style={{ background: 'white', border: `2px solid ${PRIMARY}30`, boxShadow: `0 4px 20px ${PRIMARY}15`, colorScheme: 'light' as const }}>
             <h3 className="text-sm font-bold text-gray-900 mb-4">تحديث حالة الطلب</h3>
@@ -676,12 +737,13 @@ export default function RequestDetailPage() {
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: '#111827' }}>الحالة الجديدة</label>
                 <select value={statusForm.status} onChange={e => setStatusForm(f => ({ ...f, status: e.target.value }))}
                   className="w-full h-10 border-2 rounded-xl px-3 text-sm text-gray-900 bg-white focus:outline-none" style={{ borderColor: `${PRIMARY}30` }}>
-                  <option value="new">جديد</option>
-                  <option value="reviewing">قيد المراجعة</option>
-                  <option value="needs_info">يحتاج معلومات</option>
-                  <option value="approved">مقبول</option>
-                  <option value="rejected">مرفوض</option>
+                  {getAvailableStatuses(request?.status).map(s => (
+                    <option key={s} value={s}>{statusMap[s]?.label}</option>
+                  ))}
                 </select>
+                {['approved', 'rejected'].includes(request?.status) && (
+                  <p className="text-xs text-red-500 mt-1">⛔ الحالة النهائية لا يمكن تغييرها</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: '#111827' }}>الأولوية</label>
@@ -700,7 +762,9 @@ export default function RequestDetailPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={handleUpdateStatus} disabled={updating}
+              <button
+                onClick={handleUpdateStatus}
+                disabled={updating || ['approved', 'rejected'].includes(request?.status)}
                 className="h-10 px-6 text-white rounded-xl text-sm font-semibold disabled:opacity-60"
                 style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}>
                 {updating ? 'جاري الحفظ...' : 'حفظ التغييرات'}
@@ -709,7 +773,6 @@ export default function RequestDetailPage() {
             </div>
           </div>
         )}
-
         {documentation && (
           <div className="rounded-2xl p-5 mb-5" style={{ background: 'white', border: '2px solid #05966930', boxShadow: '0 4px 20px #05966915' }}>
             <div className="flex items-center justify-between mb-4">
@@ -921,8 +984,33 @@ export default function RequestDetailPage() {
                           <input type="date" value={newFollowUpDate} min={new Date().toISOString().split('T')[0]} onChange={e => setNewFollowUpDate(e.target.value)}
                             style={{ width: '100%', height: 38, borderRadius: 9, border: `1.5px solid ${PRIMARY}25`, padding: '0 12px', fontSize: 12, outline: 'none', background: 'white', color: '#111827', boxSizing: 'border-box' as const }}/>
                         </div>
+                        {/* Confirm Popup */}
+                        {showDoneConfirm && (
+                          <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+                            <div style={{ background: 'white', borderRadius: 18, padding: '28px 24px', maxWidth: 360, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }} dir="rtl">
+                              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                                <svg width="22" height="22" fill="none" stroke="#D97706" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                              </div>
+                              <div style={{ fontSize: 15, fontWeight: 800, color: '#111827', textAlign: 'center', marginBottom: 8 }}>تأكيد إتمام المتابعة</div>
+                              <div style={{ fontSize: 12, color: '#6B7280', textAlign: 'center', lineHeight: 1.7, marginBottom: 20 }}>
+                                ⚠️ بعد تأكيد إتمام المتابعة، <strong style={{ color: '#DC2626' }}>سيتم إغلاق الحالة نهائياً</strong> ولن تتمكن من تعديلها لاحقاً.
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                <button onClick={() => setShowDoneConfirm(false)}
+                                  style={{ padding: '10px', borderRadius: 10, border: '1.5px solid #E5E7EB', background: 'white', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                                  إلغاء
+                                </button>
+                                <button onClick={() => { setShowDoneConfirm(false); handleMarkDone(); }} disabled={updatingFollowUp}
+                                  style={{ padding: '10px', borderRadius: 10, border: 'none', background: '#059669', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: updatingFollowUp ? 0.6 : 1 }}>
+                                  {updatingFollowUp ? '...' : 'نعم، تمت المتابعة'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                          <button onClick={handleMarkDone} disabled={updatingFollowUp}
+                          <button onClick={() => setShowDoneConfirm(true)} disabled={updatingFollowUp}
                             style={{ padding: '9px', borderRadius: 10, border: 'none', background: '#059669', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: updatingFollowUp ? 0.6 : 1 }}>
                             {updatingFollowUp ? '...' : 'تمت المتابعة'}
                           </button>

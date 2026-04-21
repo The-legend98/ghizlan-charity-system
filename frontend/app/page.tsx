@@ -7,6 +7,7 @@ import { useTheme } from '@/app/providers/ThemeProvider';
 import { useLang } from '@/app/providers/LangProvider';
 import Navbar from '@/components/Navbar';
 
+
 const THEMES = {
   light: {
     bg: '#FFFFFF', bg2: '#F8FAFD', text: '#0A1628', textSub: '#4B5563',
@@ -190,6 +191,99 @@ function SectionTitle({ label, labelColor = PRIMARY, title, titleGradient, sub, 
   );
 }
 
+
+function VideoCarousel({ t }: { t: any }) {
+  const [current, setCurrent] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+
+  
+  const videos = [
+    { src: '/videos/1.mp4', poster: '/videos/thumb1.png', title: 'توزيع المساعدات' },
+    { src: '/videos/2.mp4', poster: '/videos/thumb2.png', title: 'من الميدان' },
+    //{ src: '/videos/video3.mp4', poster: '/videos/thumb3.jpg', title: 'أثر عملنا' },
+  ];
+
+const prev = () => {
+  if (videoRef.current) {
+    videoRef.current.pause();
+    videoRef.current.src = videos[(current - 1 + videos.length) % videos.length].src;
+    videoRef.current.load();
+  }
+  setCurrent(i => (i - 1 + videos.length) % videos.length);
+};
+
+const next = () => {
+  if (videoRef.current) {
+    videoRef.current.pause();
+    videoRef.current.src = videos[(current + 1) % videos.length].src;
+    videoRef.current.load();
+  }
+  setCurrent(i => (i + 1) % videos.length);
+};
+
+  return (
+    <div style={{ position: 'relative' }}>
+    {/* Main Video */}
+        <div style={{ borderRadius: 20, overflow: 'hidden', boxShadow: `0 20px 60px ${PRIMARY}20`, position: 'relative', background: '#000', aspectRatio: '16/9' }}>
+         <video
+            ref={videoRef}
+            width="100%"
+            height="100%"
+            controls
+            preload="auto"
+            poster={videos[current].poster}
+            src={videos[current].src}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}>
+          </video>
+          <div style={{ position: 'absolute', bottom: 0, right: 0, left: 0, padding: '40px 20px 16px', background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)', pointerEvents: 'none' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{videos[current].title}</div>
+          </div>
+        </div>
+
+      {/* Arrows */}
+      <button onClick={prev}
+        style={{ position: 'absolute', top: '50%', right: -20, transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'white', border: `1px solid ${PRIMARY}20`, boxShadow: `0 4px 12px ${PRIMARY}20`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+        <svg width="16" height="16" fill="none" stroke={PRIMARY} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+      <button onClick={next}
+        style={{ position: 'absolute', top: '50%', left: -20, transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'white', border: `1px solid ${PRIMARY}20`, boxShadow: `0 4px 12px ${PRIMARY}20`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+        <svg width="16" height="16" fill="none" stroke={PRIMARY} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+
+     {/* Thumbnails */}
+        <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'center' }}>
+          {videos.map((v, i) => (
+            <button key={i} onClick={() => {
+              if (videoRef.current) {
+                videoRef.current.pause();
+                videoRef.current.src = videos[i].src;
+                videoRef.current.load();
+              }
+              setCurrent(i);
+            }}
+              style={{ width: 80, height: 52, borderRadius: 10, overflow: 'hidden', border: `2px solid ${i === current ? PRIMARY : 'transparent'}`, cursor: 'pointer', padding: 0, flexShrink: 0, transition: 'all 0.2s', opacity: i === current ? 1 : 0.6 }}>
+              <video
+                src={`${v.src}#t=15`}
+                preload="metadata"
+                muted
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }}/>
+            </button>
+          ))}
+        </div>
+
+      {/* Dots */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 12 }}>
+        {videos.map((_, i) => (
+          <button key={i} onClick={() => setCurrent(i)}
+            style={{ width: i === current ? 20 : 6, height: 6, borderRadius: 3, background: i === current ? PRIMARY : `${PRIMARY}30`, border: 'none', cursor: 'pointer', transition: 'all 0.3s', padding: 0 }}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const { dark, toggle } = useTheme();
@@ -204,6 +298,8 @@ export default function HomePage() {
     const timer = setInterval(() => setHeroSlide(s => (s + 1) % heroSlides.length), 5000);
     return () => clearInterval(timer);
   }, []);
+
+  
 
   return (
     <div dir={dir} style={{ background: t.bg, minHeight: '100vh', transition: 'background 0.3s' }}>
@@ -312,10 +408,35 @@ export default function HomePage() {
             {[
               { target: 500,  suffix: '+', label: lx.home.stats_families,   icon: Icons.people },
               { target: 3,    suffix: '+', label: lx.home.stats_years,      icon: Icons.shield },
-              { target: 1200, suffix: '',  label: lx.home.stats_requests,   icon: Icons.heart },
-              { target: 150,  suffix: '٪', label: lx.home.stats_volunteers, icon: Icons.star },
+              { target: 1200, suffix: '+',  label: lx.home.stats_requests,   icon: Icons.heart },
+              { target: 14 , suffix: '' , label: lx.home.stats_cities, icon: Icons.star },
             ].map((s, i) => <CounterStat key={i} {...s} t={t}/>)}
           </motion.div>
+        </div>
+      </section>
+
+      {/* ══ معرض الفيديوهات ══ */}
+      <section style={{ background: t.bg, padding: '72px 24px', overflow: 'hidden' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <AnimSection style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 16, background: `${PRIMARY}0F`, border: `1px solid ${PRIMARY}20`, borderRadius: 100, padding: '8px 20px' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
+              <span style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: '3px', textTransform: 'uppercase' as const }}>
+                {lang === 'ar' ? 'من الميدان' : 'From The Field'}
+              </span>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY }}/>
+            </div>
+            <h2 style={{ fontSize: 38, fontWeight: 900, color: TH, letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.1 }}>
+              {lang === 'ar' ? <>لحظات من <span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>أعمالنا</span></> : <>Moments from <span style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Our Work</span></>}
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to left, ${PRIMARY}, ${PRIMARY_L})` }}/>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: GOLD }}/>
+              <div style={{ width: 32, height: 3, borderRadius: 2, background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_L})` }}/>
+            </div>
+          </AnimSection>
+
+          <VideoCarousel t={t} />
         </div>
       </section>
 
@@ -528,18 +649,125 @@ export default function HomePage() {
           <SectionTitle label={lang === 'ar' ? 'تواصل معنا' : 'Contact Us'} title={lang === 'ar' ? 'نحن هنا لمساعدتك' : 'We Are Here to Help'} sub={lang === 'ar' ? 'تواصل معنا عبر أي قناة تناسبك' : 'Contact us through any channel that suits you'} t={t}/>
           <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {[
-              { title: lang === 'ar' ? 'واتساب' : 'WhatsApp', desc: lang === 'ar' ? 'تواصل معنا مباشرة' : 'Contact us directly', value: '+963 XX XXX XXXX', color: '#25D366', icon: Icons.phone },
-              { title: lang === 'ar' ? 'البريد الإلكتروني' : 'Email', desc: lang === 'ar' ? 'أرسل لنا استفسارك' : 'Send us your inquiry', value: 'info@ghozlan.org', color: PRIMARY, icon: Icons.mail },
-              { title: lang === 'ar' ? 'ساعات العمل' : 'Working Hours', desc: lang === 'ar' ? 'أحد — خميس' : 'Sun — Thu', value: lang === 'ar' ? '٩ ص — ٤ م' : '9 AM — 4 PM', color: GOLD, icon: Icons.clock },
-            ].map((c, i) => (
-              <motion.div key={c.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6 }} whileHover={{ y: -6, boxShadow: `0 20px 50px ${c.color}18` }}
-                style={{ background: t.card, borderRadius: 20, padding: '32px 24px', textAlign: 'center', border: `1px solid ${t.border}`, cursor: 'default' }}>
-                <motion.div whileHover={{ scale: 1.1, rotate: 10 }} style={{ width: 54, height: 54, borderRadius: 14, background: `${c.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: c.color }}>{c.icon}</motion.div>
+          {
+            title: lang === 'ar' ? 'وسائل التواصل الاجتماعي' : 'Social Media',
+            desc: lang === 'ar' ? 'تابعنا على منصاتنا' : 'Follow us on our platforms',
+            value: lang === 'ar' ? 'مؤسسة غزلان الخير' : 'Ghozlan Alkhair Foundation',
+            color: '#1877F2',
+            social: [
+              {
+                label: 'Facebook',
+                color: '#1877F2',
+                href: 'https://www.facebook.com/share/1E1aTFSoxk/',
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                  </svg>
+                ),
+              },
+              {
+                label: 'Instagram',
+                color: '#E1306C',
+                href: 'https://www.instagram.com/ghozlanalkhairfoundation?igsh=d2JwNDRrZXpscmhn',
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                    <circle cx="12" cy="12" r="4"/>
+                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                  </svg>
+                ),
+              },
+            ],
+          },
+          {
+            title: lang === 'ar' ? 'البريد الإلكتروني' : 'Email',
+            desc: lang === 'ar' ? 'أرسل لنا استفسارك' : 'Send us your inquiry',
+            value: 'info@ghozlanfoundation.com',
+            color: PRIMARY,
+            href: 'mailto:info@ghozlanfoundation.com',
+            icon: Icons.mail,
+          },
+          {
+            title: lang === 'ar' ? 'ساعات العمل' : 'Working Hours',
+            desc: lang === 'ar' ? 'أحد — خميس' : 'Sun — Thu',
+            value: lang === 'ar' ? '٩ ص — ٤ م' : '9 AM — 4 PM',
+            color: GOLD,
+            href: null,
+            icon: Icons.clock,
+          },
+        ].map((c, i) => (
+          <motion.div
+            key={c.title}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.15, duration: 0.6 }}
+            whileHover={{ y: -6, boxShadow: `0 20px 50px ${c.color}18` }}
+            onClick={() => c.href && window.open(c.href, '_blank')}
+            style={{
+              background: t.card, borderRadius: 20, padding: '32px 24px',
+              textAlign: 'center', border: `1px solid ${t.border}`,
+              cursor: c.href ? 'pointer' : 'default',
+            }}
+          >
+            {/* كارت عادي — بريد وساعات */}
+            {!c.social && (
+              <>
+                <motion.div whileHover={{ scale: 1.1, rotate: 10 }}
+                  style={{ width: 54, height: 54, borderRadius: 14, background: `${c.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: c.color }}>
+                  {c.icon}
+                </motion.div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: TH, marginBottom: 5 }}>{c.title}</div>
                 <div style={{ fontSize: 12, color: t.textMute, marginBottom: 10 }}>{c.desc}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: c.color }}>{c.value}</div>
-              </motion.div>
-            ))}
+              </>
+            )}
+
+            {/* كارت السوشيال — فيس + انستا */}
+          {c.social && (
+          <>
+            {/* الأيقونتين أول */}
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginBottom: 18 }}>
+              {c.social.map(s => (
+                <motion.a
+                  key={s.label}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ scale: 1.12, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    width: 52, height: 52, borderRadius: 14,
+                    background: `${s.color}15`,
+                    border: `1px solid ${s.color}30`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: s.color, textDecoration: 'none',
+                  }}
+                >
+                  {s.icon}
+                </motion.a>
+              ))}
+            </div>
+
+            {/* العنوان */}
+            <div style={{ fontSize: 16, fontWeight: 800, color: TH, marginBottom: 6 }}>
+              {c.title}
+            </div>
+
+            {/* الوصف */}
+            <div style={{ fontSize: 12, color: t.textMute, marginBottom: 10 }}>
+              {c.desc}
+            </div>
+
+            {/* الفاليو */}
+           <div style={{ fontSize: 14, fontWeight: 700, color: GOLD }}>
+              {c.value}
+            </div>
+          </>
+        )}
+          </motion.div>
+        ))}
           </div>
         </div>
       </section>
@@ -606,17 +834,31 @@ export default function HomePage() {
                 >{lx.footer.employees}</button>
               </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: '#4B5563', marginBottom: 14, letterSpacing: '2px', textTransform: 'uppercase' as const }}>{lx.footer.contact}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-                {[{ icon: Icons.mail, text: lx.footer.email }, { icon: Icons.phone, text: lx.footer.whatsapp }, { icon: Icons.clock, text: lx.footer.hours }].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#9CA3AF' }}>
-                    <span style={{ color: '#6B7280', flexShrink: 0 }}>{item.icon}</span>
-                    {item.text}
-                  </div>
-                ))}
-              </div>
+         <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#4B5563', marginBottom: 14, letterSpacing: '2px', textTransform: 'uppercase' as const }}>
+              {lx.footer.contact}
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+              {[
+                { icon: Icons.mail, text: lx.footer.email },
+                {
+                  icon: (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  ),
+                  text: lang === 'ar' ? 'سوريا - دمشق' : 'Syria - Damascus'
+                },
+                { icon: Icons.clock, text: lx.footer.hours },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#9CA3AF' }}>
+                  <span style={{ color: '#6B7280', flexShrink: 0 }}>{item.icon}</span>
+                  {item.text}
+                </div>
+              ))}
+            </div>
+          </div>
           </div>
           <div className="footer-bottom">
             <p style={{ fontSize: 12, color: '#4B5563', margin: 0 }}>{lx.footer.rights}</p>

@@ -5,12 +5,33 @@ import { Suspense, useState, useRef } from 'react';
 import { motion, useScroll, useSpring, AnimatePresence, Variants } from 'framer-motion';
 import api from '@/lib/axios';
 import { useLang } from '@/app/providers/LangProvider';
+import { useTheme } from '@/app/providers/ThemeProvider';
 import Navbar from '@/components/Navbar';
-
 
 const PRIMARY   = '#1B6CA8';
 const PRIMARY_L = '#4AACCD';
 const GOLD      = '#C9A84C';
+
+const THEMES = {
+  light: {
+    bg:       '#F0F7FF',
+    card:     '#ffffff',
+    border:   '#E5E7EB',
+    text:     '#111827',
+    textMute: '#6B7280',
+    textSub:  '#9CA3AF',
+    input:    '#ffffff',
+  },
+  dark: {
+    bg:       '#0A1628',
+    card:     '#0F1E35',
+    border:   'rgba(74,172,205,0.12)',
+    text:     '#F9FAFB',
+    textMute: '#9CA3AF',
+    textSub:  '#6B7280',
+    input:    '#0A1628',
+  },
+};
 
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
@@ -34,6 +55,9 @@ function ConfirmContent() {
   const params    = useSearchParams();
   const router    = useRouter();
   const { lang, dir } = useLang();
+  const { dark }  = useTheme();
+  const t         = dark ? THEMES.dark : THEMES.light;
+
   const ref       = params.get('ref')       || '0';
   const name      = params.get('name')      || '';
   const requestId = params.get('requestId') || '';
@@ -106,30 +130,27 @@ function ConfirmContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#F0F7FF' }} dir={dir}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: t.bg, transition: 'background 0.3s' }} dir={dir}>
 
       <ScrollProgress />
-
-      {/* Navbar */}
       <Navbar />
 
-      <div className="flex-1 px-4 py-10">
-        <div className="max-w-md mx-auto">
+      <div style={{ flex: 1, padding: '40px 16px' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto' }}>
 
           {/* Success Icon */}
-          <div className="text-center mb-8">
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 border-4"
-              style={{ background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` }}
+              style={{ width: 80, height: 80, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', background: `${PRIMARY}10`, border: `4px solid ${PRIMARY}30` }}
             >
               <motion.svg
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="w-10 h-10" fill="none" stroke={PRIMARY} viewBox="0 0 24 24"
+                width="40" height="40" fill="none" stroke={PRIMARY} viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/>
               </motion.svg>
@@ -138,7 +159,7 @@ function ConfirmContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-2xl font-bold text-gray-900 mb-2"
+              style={{ fontSize: 24, fontWeight: 800, color: t.text, margin: '0 0 8px 0' }}
             >
               {tx.title}
             </motion.h1>
@@ -146,7 +167,7 @@ function ConfirmContent() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="text-gray-500 text-sm"
+              style={{ fontSize: 13, color: t.textMute, margin: 0 }}
             >
               {tx.thanks}
             </motion.p>
@@ -157,21 +178,20 @@ function ConfirmContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5"
+            style={{ background: t.card, borderRadius: 18, border: `1px solid ${t.border}`, boxShadow: dark ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', padding: 24, marginBottom: 16 }}
           >
-            <p className="text-sm text-gray-500 mb-3">{tx.refLabel}</p>
+            <p style={{ fontSize: 13, color: t.textMute, marginBottom: 12, margin: '0 0 12px 0' }}>{tx.refLabel}</p>
             <motion.div
               animate={{ boxShadow: [`0 0 0 0px ${PRIMARY}20`, `0 0 0 8px ${PRIMARY}08`, `0 0 0 0px ${PRIMARY}20`] }}
               transition={{ duration: 2.5, repeat: Infinity }}
-              className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl mb-2"
-              style={{ background: `${PRIMARY}08` }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '8px 16px', borderRadius: 12, marginBottom: 8, background: `${PRIMARY}08` }}
             >
-              <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
+              <svg width="24" height="24" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
               </svg>
-              <span className="text-3xl font-bold tracking-wider" style={{ color: PRIMARY }}>{ref}</span>
+              <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: 4, color: PRIMARY }}>{ref}</span>
             </motion.div>
-            <p className="text-xs text-gray-400 text-center">{tx.refNote}</p>
+            <p style={{ fontSize: 11, color: t.textSub, textAlign: 'center', margin: 0 }}>{tx.refNote}</p>
           </motion.div>
 
           {/* Upload */}
@@ -179,104 +199,66 @@ function ConfirmContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5"
+            style={{ background: t.card, borderRadius: 18, border: `1px solid ${t.border}`, overflow: 'hidden', marginBottom: 16, boxShadow: dark ? 'none' : '0 2px 12px rgba(0,0,0,0.06)' }}
           >
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3" style={{ background: `${GOLD}08` }}>
-              <motion.div
-                whileHover={{ rotate: 15, scale: 1.1 }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: `${GOLD}20` }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke={GOLD} viewBox="0 0 24 24">
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.border}`, background: `${GOLD}08`, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${GOLD}20` }}>
+                <svg width="16" height="16" fill="none" stroke={GOLD} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                 </svg>
-              </motion.div>
+              </div>
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">{tx.uploadTitle}</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{tx.uploadSub}</p>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{tx.uploadTitle}</div>
+                <div style={{ fontSize: 11, color: t.textMute, marginTop: 2 }}>{tx.uploadSub}</div>
               </div>
             </div>
 
-            <div className="p-5">
+            <div style={{ padding: 20 }}>
               <AnimatePresence mode="wait">
                 {uploaded ? (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 200 }}
-                    className="text-center py-6"
-                  >
-                    <motion.div
-                      initial={{ scale: 0 }} animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 300, delay: 0.1 }}
-                      className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
-                      style={{ background: '#f0fdf4', border: '3px solid #bbf7d0' }}
-                    >
-                      <svg className="w-7 h-7" fill="none" stroke="#16a34a" viewBox="0 0 24 24">
+                  <motion.div key="success" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} style={{ textAlign: 'center', padding: '24px 0' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', background: '#f0fdf4', border: '3px solid #bbf7d0' }}>
+                      <svg width="28" height="28" fill="none" stroke="#16a34a" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/>
                       </svg>
-                    </motion.div>
-                    <p className="text-sm font-semibold text-green-700">{tx.uploadDone}</p>
+                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#16a34a', margin: 0 }}>{tx.uploadDone}</p>
                   </motion.div>
                 ) : (
                   <motion.div key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <motion.div
-                      whileHover={{ borderColor: PRIMARY, background: `${PRIMARY}08` }}
+                    <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all mb-4"
-                      style={{ borderColor: `${PRIMARY}30` }}
+                      style={{ border: `2px dashed ${PRIMARY}30`, borderRadius: 14, padding: 24, textAlign: 'center', cursor: 'pointer', marginBottom: 16 }}
                     >
-                      <motion.div
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
-                        style={{ background: `${PRIMARY}10` }}
-                      >
-                        <svg className="w-6 h-6" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
+                      <div style={{ width: 48, height: 48, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', background: `${PRIMARY}10` }}>
+                        <svg width="24" height="24" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
-                      </motion.div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">{tx.uploadArea}</p>
-                      <p className="text-xs text-gray-400">{tx.uploadNote}</p>
-                      <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf" onChange={handleFileChange} className="hidden" />
-                    </motion.div>
+                      </div>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: t.text, marginBottom: 4 }}>{tx.uploadArea}</p>
+                      <p style={{ fontSize: 11, color: t.textSub, margin: 0 }}>{tx.uploadNote}</p>
+                      <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf" onChange={handleFileChange} style={{ display: 'none' }} />
+                    </div>
 
                     <AnimatePresence>
                       {files.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="space-y-2 mb-4"
-                        >
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {files.map((f, i) => (
-                            <motion.div
-                              key={i}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: 10 }}
-                              transition={{ delay: i * 0.05 }}
-                              className="bg-gray-50 rounded-xl p-3 flex items-center gap-3"
-                            >
-                              <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 text-white" style={{ background: PRIMARY }}>
+                            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ delay: i * 0.05 }}
+                              style={{ background: dark ? `${PRIMARY}08` : '#F8FAFC', borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${t.border}` }}>
+                              <div style={{ width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, color: 'white', background: PRIMARY }}>
                                 {f.file.name.endsWith('.pdf') ? 'PDF' : 'IMG'}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs text-gray-700 truncate font-medium">{f.file.name}</p>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: 11, color: t.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500, margin: '0 0 4px 0' }}>{f.file.name}</p>
                                 <select value={f.type} onChange={e => handleTypeChange(i, e.target.value)}
-                                  className="mt-1 text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white w-full focus:outline-none">
-                                  {docTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                  style={{ fontSize: 11, border: `1px solid ${t.border}`, borderRadius: 8, padding: '4px 8px', background: t.input, color: t.text, width: '100%', outline: 'none' }}>
+                                  {docTypes.map(dt => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
                                 </select>
                               </div>
-                              <motion.button
-                                whileHover={{ scale: 1.2, color: '#EF4444' }}
-                                onClick={() => removeFile(i)}
-                                className="text-gray-300 flex-shrink-0"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                              </motion.button>
+                              <button onClick={() => removeFile(i)} style={{ color: '#D1D5DB', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                              </button>
                             </motion.div>
                           ))}
                         </motion.div>
@@ -285,11 +267,9 @@ function ConfirmContent() {
 
                     <AnimatePresence>
                       {uploadError && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                          className="flex items-center gap-2 text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-3 text-xs"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#DC2626', background: '#FEF2F2', borderRadius: 10, padding: '8px 12px', marginBottom: 12, fontSize: 12 }}>
+                          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                           {uploadError}
                         </motion.div>
                       )}
@@ -299,17 +279,14 @@ function ConfirmContent() {
                       {files.length > 0 && (
                         <motion.button
                           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                          whileHover={{ scale: 1.02, boxShadow: `0 8px 24px ${GOLD}50` }}
-                          whileTap={{ scale: 0.97 }}
+                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                           onClick={handleUpload} disabled={uploading}
-                          className="w-full h-11 text-white rounded-xl text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
-                          style={{ background: `linear-gradient(135deg, ${GOLD}, #e8b84b)` }}
+                          style={{ width: '100%', height: 44, color: 'white', borderRadius: 12, fontSize: 13, fontWeight: 600, border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: uploading ? 0.7 : 1, background: `linear-gradient(135deg, ${GOLD}, #e8b84b)` }}
                         >
-                          {uploading ? (
-                            <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>{tx.uploading}</>
-                          ) : (
-                            <><svg className="w-4 h-4" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>{tx.uploadBtn(files.length)}</>
-                          )}
+                          {uploading
+                            ? <><span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }}/>{tx.uploading}</>
+                            : <><svg width="16" height="16" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>{tx.uploadBtn(files.length)}</>
+                          }
                         </motion.button>
                       )}
                     </AnimatePresence>
@@ -321,26 +298,20 @@ function ConfirmContent() {
 
           {/* Steps */}
           <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={stagger}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 space-y-3"
+            initial="hidden" animate="visible" variants={stagger}
+            style={{ background: t.card, borderRadius: 18, border: `1px solid ${t.border}`, padding: 20, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12, boxShadow: dark ? 'none' : '0 2px 12px rgba(0,0,0,0.06)' }}
           >
             {tx.steps.map((item, i) => (
-              <motion.div key={i} variants={fadeUp} className="flex items-center gap-3">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 10 }}
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${PRIMARY}10` }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
+              <motion.div key={i} variants={fadeUp} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: `${PRIMARY}10` }}>
+                  <svg width="16" height="16" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
                     {i === 0 && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>}
                     {i === 1 && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>}
                     {i === 2 && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>}
                   </svg>
-                </motion.div>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {item.text} <strong className="text-gray-900">{item.bold}</strong>
+                </div>
+                <p style={{ fontSize: 13, color: t.textMute, lineHeight: 1.6, margin: 0 }}>
+                  {item.text} <strong style={{ color: t.text }}>{item.bold}</strong>
                 </p>
               </motion.div>
             ))}
@@ -349,29 +320,27 @@ function ConfirmContent() {
           {/* Buttons */}
           <motion.button
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
-            whileHover={{ scale: 1.03, boxShadow: `0 12px 32px ${PRIMARY}45` }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
             onClick={() => router.push(`/track?query=${ref}`)}
-            className="w-full h-12 text-white rounded-2xl text-sm font-semibold shadow-lg mb-3 flex items-center justify-center gap-2"
-            style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})` }}
+            style={{ width: '100%', height: 48, color: 'white', borderRadius: 16, fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, boxShadow: `0 8px 24px ${PRIMARY}40` }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <svg width="16" height="16" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             {tx.trackBtn}
           </motion.button>
 
           <motion.button
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }}
-            whileHover={{ scale: 1.02, background: '#f0f7ff' }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
             onClick={() => router.push('/')}
-            className="w-full h-11 rounded-2xl text-sm border text-gray-600"
-            style={{ borderColor: `${PRIMARY}30` }}
+            style={{ width: '100%', height: 44, borderRadius: 16, fontSize: 13, border: `1px solid ${PRIMARY}30`, color: t.textMute, background: 'transparent', cursor: 'pointer' }}
           >
             {tx.homeBtn}
           </motion.button>
 
         </div>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
