@@ -7,6 +7,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Attachment;
 
 class RequestConfirmation extends Mailable
 {
@@ -29,6 +30,18 @@ class RequestConfirmation extends Mailable
     {
         return new Content(
             view: 'emails.request-confirmation',
+            with: [
+            'logoUrl' => 'cid:logo',
+        ]
         );
+    }
+
+    public function attachments(): array
+    {
+        return [
+            Attachment::fromPath(public_path('g-logo.png'))
+                ->as('logo')
+                ->withMime('image/png'),
+        ];
     }
 }

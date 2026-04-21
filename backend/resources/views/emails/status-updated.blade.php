@@ -31,8 +31,11 @@
             <!-- Logo Circle -->
             <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 20px;">
               <tr>
-                <td align="center" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);font-size:30px;font-weight:900;color:white;text-align:center;line-height:72px;">
-                  غ
+               <td align="center" style="width:80px;height:80px;">
+                  <img src="{{ $logoUrl }}"
+                    alt="غزلان الخير"
+                    width="80" height="80"
+                    style="width:80px;height:80px;object-fit:contain;display:block;border-radius:50%;background:white;padding:6px;"/>
                 </td>
               </tr>
             </table>

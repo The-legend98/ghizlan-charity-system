@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Request extends Model
 {
+        
+
     use HasFactory;
       protected $fillable = [
         'ref_number','full_name', 'phone', 'age', 'gender',

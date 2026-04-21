@@ -7,6 +7,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Attachment;
 
 class StatusUpdated extends Mailable
 {
@@ -30,6 +31,18 @@ class StatusUpdated extends Mailable
     {
         return new Content(
             view: 'emails.status-updated',
+        with: [
+            'logoUrl' => 'cid:logo',
+        ]
         );
+    }
+
+    public function attachments(): array
+    {
+        return [
+            Attachment::fromPath(public_path('g-logo.png'))
+                ->as('logo')
+                ->withMime('image/png'),
+        ];
     }
 }
