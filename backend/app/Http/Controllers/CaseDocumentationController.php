@@ -78,9 +78,7 @@ class CaseDocumentationController extends Controller
             ->where('request_id', $requestId)
             ->first();
 
-        if (!$doc) {
-            return response()->json(['message' => 'لا يوجد توثيق لهذا الطلب'], 404);
-        }
+       
 
         return response()->json($doc);
     }

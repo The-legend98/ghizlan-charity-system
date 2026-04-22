@@ -56,8 +56,8 @@ export default function EmployeeDashboard() {
   const [search, setSearch]                 = useState('');
   const [statusFilter, setStatusFilter]     = useState('');
   const [pagination, setPagination]         = useState<any>(null);
-  const [staleAlerts, setStaleAlerts]       = useState<any[]>([]);   // ✅
-  const [followUpAlerts, setFollowUpAlerts] = useState<any[]>([]);   // ✅
+  const [staleAlerts, setStaleAlerts]       = useState<any[]>([]);   
+  const [followUpAlerts, setFollowUpAlerts] = useState<any[]>([]);   
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -67,14 +67,14 @@ export default function EmployeeDashboard() {
     if (parsed.role === 'manager') { router.push('/dashboard/manager'); return; }
     setUser(parsed);
     fetchRequests();
-    fetchAlerts(); // ✅
+    fetchAlerts(); 
   }, []);
 
   useEffect(() => {
     fetchRequests();
   }, [search, statusFilter]);
 
-  // ✅ fetch منفصل — كل الطلبات لاستخراج التنبيهات
+  //  fetch منفصل — كل الطلبات لاستخراج التنبيهات
   const fetchAlerts = async () => {
     try {
       const res = await api.get('/requests?per_page=500');
@@ -347,7 +347,7 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        {/* ✅ Alerts — من fetchAlerts منفصل */}
+        {/*  Alerts — من fetchAlerts منفصل */}
         {(staleAlerts.length > 0 || followUpAlerts.length > 0) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
 
