@@ -49,11 +49,13 @@ function RequestsPageContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
-  const [user, setUser]         = useState<any>(null);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters]   = useState({
+  const [user, setUser]                     = useState<any>(null);
+  const [requests, setRequests]             = useState<any[]>([]);
+  const [loading, setLoading]               = useState(true);
+  const [showFilters, setShowFilters]       = useState(false);
+  const [followUpAlerts, setFollowUpAlerts] = useState<any[]>([]);  // ✅ جديد
+  const [staleAlerts, setStaleAlerts]       = useState<any[]>([]);  // ✅ جديد
+  const [filters, setFilters] = useState({
     status:          searchParams.get('status')          || '',
     region:          searchParams.get('region')          || '',
     assistance_type: searchParams.get('assistance_type') || '',
@@ -68,9 +70,40 @@ function RequestsPageContent() {
     const token    = localStorage.getItem('token');
     if (!token || !userData) { router.push('/login'); return; }
     setUser(JSON.parse(userData));
+    fetchAlerts(); // ✅ جيب التنبيهات عند الدخول
   }, []);
 
   useEffect(() => { fetchRequests(currentPage); }, [searchParams]);
+
+  // ✅ fetch منفصل لكل الطلبات لاستخراج التنبيهات
+  const fetchAlerts = async () => {
+    try {
+      const res = await api.get('/requests?per_page=500');
+      const all: any[] = res.data.data || [];
+
+      // طلبات بدون تحديث أكثر من 5 أيام
+      const stale = all.filter(r => {
+        const days = Math.floor(
+          (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return ['new', 'reviewing', 'needs_info'].includes(r.status) && days >= 5;
+      });
+
+      // طلبات تحتاج متابعة اليوم أو غداً
+      const followUp = all.filter(r => {
+        const doc = r.case_documentation;
+        if (!doc?.needs_follow_up || !doc?.follow_up_date) return false;
+        if (!['pending', 'scheduled', 'rescheduled'].includes(doc.follow_up_status)) return false;
+        const diff = Math.floor(
+          (new Date(doc.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        );
+        return diff <= 1;
+      });
+
+      setStaleAlerts(stale);
+      setFollowUpAlerts(followUp);
+    } catch {}
+  };
 
   const fetchRequests = async (page?: number) => {
     setLoading(true);
@@ -136,71 +169,62 @@ function RequestsPageContent() {
     <div style={{ minHeight: '100vh', background: '#EEF5FB', position: 'relative' }} dir="rtl">
       <BgPattern />
 
-     {/* ══ NAVBAR ══ */}
-      <nav style={{
-  background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)',
-  borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50,
-}}>
-  <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+      {/* ══ NAVBAR ══ */}
+      <nav style={{ background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
 
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-      {user?.role === 'manager' && (
-        <button onClick={() => router.push('/dashboard/manager')}
-          style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${PRIMARY}20`, background: `${PRIMARY}06`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}12`; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}06`; }}>
-          <svg width="15" height="15" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
-          </svg>
-        </button>
-      )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-        onClick={() => router.push(user?.role === 'manager' ? '/dashboard/manager' : '/dashboard/requests')}>
-        <img src="/g-logo.png" alt="غزلان الخير"
-          style={{ width: 38, height: 38, objectFit: 'contain' }}
-          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.2px', lineHeight: 1.2 }}>إدارة الطلبات</div>
-          <div style={{ fontSize: 8, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {user?.role === 'manager' && (
+              <button onClick={() => router.push('/dashboard/manager')}
+                style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${PRIMARY}20`, background: `${PRIMARY}06`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}12`; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}06`; }}>
+                <svg width="15" height="15" fill="none" stroke={PRIMARY} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+              </button>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+              onClick={() => router.push(user?.role === 'manager' ? '/dashboard/manager' : '/dashboard/requests')}>
+              <img src="/g-logo.png" alt="غزلان الخير" style={{ width: 38, height: 38, objectFit: 'contain' }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.2px', lineHeight: 1.2 }}>إدارة الطلبات</div>
+                <div style={{ fontSize: 8, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {user?.role === 'manager' && (
+              <button onClick={() => router.push('/dashboard/manager')} className="req-hide-mobile"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '7px 13px', borderRadius: 10, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, color: '#4B5563', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}12`; (e.currentTarget as HTMLElement).style.color = PRIMARY; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}06`; (e.currentTarget as HTMLElement).style.color = '#4B5563'; }}>
+                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2"/></svg>
+                لوحة المدير
+              </button>
+            )}
+            <NotificationBell />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 10, background: user?.role === 'manager' ? `${GOLD}15` : `${PRIMARY}08`, border: `1px solid ${user?.role === 'manager' ? GOLD + '30' : PRIMARY + '20'}` }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${user?.role === 'manager' ? GOLD : PRIMARY}, ${user?.role === 'manager' ? '#E8C96A' : PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                {user?.name?.charAt(0)}
+              </div>
+              <div className="req-hide-mobile">
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
+                <div style={{ fontSize: 9, color: user?.role === 'manager' ? GOLD : PRIMARY_L }}>{user?.role === 'manager' ? 'مدير' : 'موظف'}</div>
+              </div>
+            </div>
+            <button onClick={handleLogout}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '7px 13px', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              <span className="req-hide-mobile">خروج</span>
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
-
-    {/* Actions */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {user?.role === 'manager' && (
-        <button onClick={() => router.push('/dashboard/manager')} className="req-hide-mobile"
-          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '7px 13px', borderRadius: 10, border: `1px solid ${PRIMARY}25`, background: `${PRIMARY}06`, color: '#4B5563', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}12`; (e.currentTarget as HTMLElement).style.color = PRIMARY; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${PRIMARY}06`; (e.currentTarget as HTMLElement).style.color = '#4B5563'; }}>
-          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2"/></svg>
-          لوحة المدير
-        </button>
-      )}
-
-      <NotificationBell />
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 10, background: user?.role === 'manager' ? `${GOLD}15` : `${PRIMARY}08`, border: `1px solid ${user?.role === 'manager' ? GOLD + '30' : PRIMARY + '20'}` }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${user?.role === 'manager' ? GOLD : PRIMARY}, ${user?.role === 'manager' ? '#E8C96A' : PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-          {user?.name?.charAt(0)}
-        </div>
-        <div className="req-hide-mobile">
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{user?.name}</div>
-          <div style={{ fontSize: 9, color: user?.role === 'manager' ? GOLD : PRIMARY_L }}>{user?.role === 'manager' ? 'مدير' : 'موظف'}</div>
-        </div>
-      </div>
-
-      <button onClick={handleLogout}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '7px 13px', cursor: 'pointer', transition: 'all 0.2s' }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}>
-        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-        <span className="req-hide-mobile">خروج</span>
-      </button>
-    </div>
-
-  </div>
-</nav>
+      </nav>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '16px', position: 'relative', zIndex: 1 }}>
 
@@ -210,12 +234,8 @@ function RequestsPageContent() {
             <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111827', margin: 0 }}>قائمة الطلبات</h1>
             <p style={{ fontSize: 11, color: '#9CA3AF', margin: '2px 0 0' }}>{pagination?.total || 0} طلب إجمالاً</p>
           </div>
-          {/* زر الفلاتر على الموبايل */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="req-filter-btn"
-            style={{ display: 'none', alignItems: 'center', gap: 6, fontSize: 12, padding: '7px 14px', borderRadius: 10, border: `1px solid ${PRIMARY}25`, background: hasFilters ? `${PRIMARY}12` : 'white', color: hasFilters ? PRIMARY : '#4B5563', fontWeight: 600, cursor: 'pointer' }}
-          >
+          <button onClick={() => setShowFilters(!showFilters)} className="req-filter-btn"
+            style={{ display: 'none', alignItems: 'center', gap: 6, fontSize: 12, padding: '7px 14px', borderRadius: 10, border: `1px solid ${PRIMARY}25`, background: hasFilters ? `${PRIMARY}12` : 'white', color: hasFilters ? PRIMARY : '#4B5563', fontWeight: 600, cursor: 'pointer' }}>
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2"/>
             </svg>
@@ -223,33 +243,24 @@ function RequestsPageContent() {
           </button>
         </div>
 
-
-        {/* ── تنبيهات الطلبات ── */}
-      {(() => {
-        const staleRequests = requests.filter(r => {
-          const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-          return ['new','reviewing','needs_info'].includes(r.status) && days >= 5;
-        });
-      const followUpToday = requests.filter(r => {
-        const doc = r.case_documentation;
-        if (!doc?.needs_follow_up || !doc?.follow_up_date) return false;
-        if (!['pending','scheduled','rescheduled'].includes(doc.follow_up_status)) return false;
-        const diff = Math.floor((new Date(doc.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        return diff <= 1;
-      });
-        if (!staleRequests.length && !followUpToday.length) return null;
-        return (
+        {/* ── ✅ التنبيهات — من fetchAlerts منفصل ── */}
+        {(staleAlerts.length > 0 || followUpAlerts.length > 0) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-            {staleRequests.length > 0 && (
+
+            {staleAlerts.length > 0 && (
               <div style={{ borderRadius: 14, padding: '12px 16px', background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <svg width="18" height="18" fill="none" stroke="#D97706" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <svg width="18" height="18" fill="none" stroke="#D97706" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 6 }}>
-                    ⚠️ {staleRequests.length} طلب بدون تحديث أكثر من 5 أيام
+                    ⚠️ {staleAlerts.length} طلب بدون تحديث أكثر من 5 أيام
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {staleRequests.map(r => {
-                      const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+                    {staleAlerts.map(r => {
+                      const days = Math.floor(
+                        (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24)
+                      );
                       return (
                         <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
                           style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#FEF9C3', border: '1px solid #FDE68A', color: '#92400E', cursor: 'pointer', fontWeight: 600 }}>
@@ -261,18 +272,21 @@ function RequestsPageContent() {
                 </div>
               </div>
             )}
-            {followUpToday.length > 0 && (
+
+            {followUpAlerts.length > 0 && (
               <div style={{ borderRadius: 14, padding: '12px 16px', background: '#EDE9FE', border: '1px solid #DDD6FE', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <svg width="18" height="18" fill="none" stroke="#7C3AED" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <svg width="18" height="18" fill="none" stroke="#7C3AED" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', marginBottom: 6 }}>
-                     {followUpToday.length} موعد متابعة اليوم أو غداً
+                    📅 {followUpAlerts.length} موعد متابعة اليوم أو غداً
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {followUpToday.map(r => (
+                    {followUpAlerts.map(r => (
                       <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
                         style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#5B21B6', cursor: 'pointer', fontWeight: 600 }}>
-                        {r.full_name} — {new Date(r.follow_up_date).toLocaleDateString('ar-SA')}
+                        {r.full_name} — {new Date(r.case_documentation.follow_up_date).toLocaleDateString('ar-SA')}
                       </button>
                     ))}
                   </div>
@@ -280,18 +294,14 @@ function RequestsPageContent() {
               </div>
             )}
           </div>
-        );
-      })()}
+        )}
 
         {/* ── Filters ── */}
         <div className={`req-filters ${showFilters ? 'req-filters-open' : ''}`} style={{ background: 'white', borderRadius: 16, padding: '14px', marginBottom: 14, border: `1px solid ${PRIMARY}15`, boxShadow: `0 2px 12px ${PRIMARY}08` }}>
           <div className="req-filters-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, alignItems: 'center' }}>
-            <input value={filters.search}
-              onChange={e => handleFilterChange('search', e.target.value)}
+            <input value={filters.search} onChange={e => handleFilterChange('search', e.target.value)}
               placeholder="ابحث بالاسم أو الهاتف..."
-              style={{ ...selectStyle, gridColumn: 'span 2' } as any}
-              className="req-search-full"
-            />
+              style={{ ...selectStyle, gridColumn: 'span 2' } as any} className="req-search-full"/>
             <select value={filters.status} onChange={e => handleFilterChange('status', e.target.value)} style={selectStyle}>
               <option value="">كل الحالات</option>
               <option value="new">جديد</option>
@@ -340,23 +350,19 @@ function RequestsPageContent() {
             </div>
           ) : (
             <>
-              {/* Table Header */}
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 0.8fr 1fr 0.9fr', padding: '10px 16px', background: '#F8FAFC', borderBottom: `1px solid ${PRIMARY}10` }}>
                 {['مقدم الطلب', 'نوع المساعدة', 'الموظف', 'المنطقة', 'الأولوية', 'الحالة', 'التاريخ'].map(h => (
                   <div key={h} style={{ fontSize: 11, fontWeight: 700, color: '#6B7280' }}>{h}</div>
                 ))}
               </div>
-              {/* Table Rows */}
               {requests.map(req => {
                 const status   = statusMap[req.status]     || statusMap.new;
                 const priority = priorityMap[req.priority] || priorityMap.normal;
                 return (
-                  <div key={req.id}
-                    onClick={() => router.push(`/dashboard/requests/${req.id}`)}
+                  <div key={req.id} onClick={() => router.push(`/dashboard/requests/${req.id}`)}
                     style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 0.8fr 1fr 0.9fr', padding: '12px 16px', borderBottom: `1px solid ${PRIMARY}06`, cursor: 'pointer', transition: 'background 0.15s', alignItems: 'center' }}
                     onMouseEnter={e => (e.currentTarget.style.background = `${PRIMARY}04`)}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{req.full_name}</div>
                       <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{req.phone}</div>
@@ -392,13 +398,10 @@ function RequestsPageContent() {
             const status   = statusMap[req.status]     || statusMap.new;
             const priority = priorityMap[req.priority] || priorityMap.normal;
             return (
-              <div key={req.id}
-                onClick={() => router.push(`/dashboard/requests/${req.id}`)}
+              <div key={req.id} onClick={() => router.push(`/dashboard/requests/${req.id}`)}
                 style={{ background: 'white', borderRadius: 14, border: `1px solid ${PRIMARY}12`, boxShadow: `0 2px 10px ${PRIMARY}06`, padding: '14px', cursor: 'pointer', transition: 'all 0.15s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 20px ${PRIMARY}15`; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 10px ${PRIMARY}06`; }}
-              >
-                {/* Card Header */}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 10px ${PRIMARY}06`; }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{req.full_name}</div>
@@ -408,14 +411,12 @@ function RequestsPageContent() {
                     {status.label}
                   </span>
                 </div>
-
-                {/* Card Details */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {[
-                    { label: 'النوع',     value: assistanceMap[req.assistance_type] || req.assistance_type },
-                    { label: 'المنطقة',   value: req.region },
-                    { label: 'الموظف',    value: req.assigned_to?.name || 'غير معيّن' },
-                    { label: 'الأولوية',  value: priority.label, color: priority.color },
+                    { label: 'النوع',    value: assistanceMap[req.assistance_type] || req.assistance_type },
+                    { label: 'المنطقة',  value: req.region },
+                    { label: 'الموظف',   value: req.assigned_to?.name || 'غير معيّن' },
+                    { label: 'الأولوية', value: priority.label, color: priority.color },
                   ].map((item, i) => (
                     <div key={i} style={{ background: '#F8FAFC', borderRadius: 8, padding: '7px 10px' }}>
                       <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>{item.label}</div>
@@ -423,12 +424,8 @@ function RequestsPageContent() {
                     </div>
                   ))}
                 </div>
-
-                {/* Card Footer */}
                 <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${PRIMARY}08`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#9CA3AF' }}>
-                    {new Date(req.created_at).toLocaleDateString('ar-SA')}
-                  </span>
+                  <span style={{ fontSize: 11, color: '#9CA3AF' }}>{new Date(req.created_at).toLocaleDateString('ar-SA')}</span>
                   <span style={{ fontSize: 11, color: PRIMARY, fontWeight: 600 }}>عرض التفاصيل ←</span>
                 </div>
               </div>
@@ -472,43 +469,21 @@ function RequestsPageContent() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── Mobile ── */
         @media (max-width: 768px) {
-          .req-table   { display: none !important; }
-          .req-cards   { display: flex !important; }
+          .req-table { display: none !important; }
+          .req-cards { display: flex !important; }
           .req-filter-btn { display: flex !important; }
           .req-hide-mobile { display: none !important; }
-
-          /* الفلاتر مخفية افتراضياً على الموبايل */
-          .req-filters {
-            display: none !important;
-          }
-          .req-filters.req-filters-open {
-            display: block !important;
-          }
-          .req-filters-grid {
-            grid-template-columns: 1fr 1fr !important;
-          }
-          .req-search-full {
-            grid-column: span 2 !important;
-          }
-          .req-region {
-            grid-column: span 2 !important;
-          }
+          .req-filters { display: none !important; }
+          .req-filters.req-filters-open { display: block !important; }
+          .req-filters-grid { grid-template-columns: 1fr 1fr !important; }
+          .req-search-full { grid-column: span 2 !important; }
+          .req-region { grid-column: span 2 !important; }
         }
-
         @media (max-width: 480px) {
-          .req-filters-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .req-search-full,
-          .req-region {
-            grid-column: span 1 !important;
-          }
+          .req-filters-grid { grid-template-columns: 1fr !important; }
+          .req-search-full, .req-region { grid-column: span 1 !important; }
         }
-
-        /* Desktop: الفلاتر ظاهرة دايماً */
         @media (min-width: 769px) {
           .req-filters { display: block !important; }
           .req-filter-btn { display: none !important; }

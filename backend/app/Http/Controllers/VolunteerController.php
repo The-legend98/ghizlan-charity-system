@@ -19,7 +19,7 @@ class VolunteerController extends Controller
         ]);
 
         try {
-            \Illuminate\Support\Facades\Mail::to('info@ghozlanfoundation.com')  // غيّر للإيميل الرسمي
+            \Illuminate\Support\Facades\Mail::to('info@ghozlanfoundation.com')
                 ->send(new \App\Mail\VolunteerRequest($data));
         } catch (\Exception $e) {
             \Log::error('Volunteer mail error: ' . $e->getMessage());

@@ -264,7 +264,7 @@ const next = () => {
             }}
               style={{ width: 80, height: 52, borderRadius: 10, overflow: 'hidden', border: `2px solid ${i === current ? PRIMARY : 'transparent'}`, cursor: 'pointer', padding: 0, flexShrink: 0, transition: 'all 0.2s', opacity: i === current ? 1 : 0.6 }}>
               <video
-                src={`${v.src}#t=15`}
+                src={`${v.src}#t=23`}
                 preload="metadata"
                 muted
                 playsInline

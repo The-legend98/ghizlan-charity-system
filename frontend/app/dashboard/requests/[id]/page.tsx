@@ -981,9 +981,19 @@ const getAvailableStatuses = (current: string) => {
                         </div>
                         <div>
                           <label style={{ fontSize: 11, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>تاريخ موعد جديد</label>
-                          <input type="date" value={newFollowUpDate} min={new Date().toISOString().split('T')[0]} onChange={e => setNewFollowUpDate(e.target.value)}
-                            style={{ width: '100%', height: 38, borderRadius: 9, border: `1.5px solid ${PRIMARY}25`, padding: '0 12px', fontSize: 12, outline: 'none', background: 'white', color: '#111827', boxSizing: 'border-box' as const }}/>
-                        </div>
+                          <input
+                            type="date"
+                            value={newFollowUpDate}
+                            min={(() => {
+                              const base = documentation.follow_up_date
+                                ? new Date(documentation.follow_up_date)
+                                : new Date();
+                              base.setDate(base.getDate() + 1);
+                              return base.toISOString().split('T')[0];
+                            })()}
+                            onChange={e => setNewFollowUpDate(e.target.value)}
+                            style={{ width: '100%', height: 38, borderRadius: 9, border: `1.5px solid ${PRIMARY}25`, padding: '0 12px', fontSize: 12, outline: 'none', background: 'white', color: '#111827', boxSizing: 'border-box' as const }}
+                          />  </div>
                         {/* Confirm Popup */}
                         {showDoneConfirm && (
                           <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>

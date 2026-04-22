@@ -54,7 +54,7 @@ export default function TrackPage() {
     uploading: lang === 'ar' ? 'جاري الرفع...' : 'Uploading...',
     uploadDone: lang === 'ar' ? 'تم رفع الملفات بنجاح!' : 'Files uploaded successfully!',
     uploadDoneSub: lang === 'ar' ? 'سيراجع فريقنا الملفات المرفوعة ويتواصل معك قريباً' : 'Our team will review the uploaded files and contact you soon',
-    footerNote: lang === 'ar' ? 'تحتاج مساعدة؟ تواصل معنا عبر واتساب' : 'Need help? Contact us via WhatsApp',
+    footerNote: lang === 'ar' ? 'تحتاج مساعدة؟ تواصل معنا عبر البريد الالكتروني' : 'Need help? Contact us via Email',
     statusMessages: {
       new:        lang === 'ar' ? 'تم استلام طلبك وسيبدأ فريقنا بمراجعته قريباً.' : 'Your request has been received and our team will begin reviewing it soon.',
       reviewing:  lang === 'ar' ? 'طلبك قيد المراجعة حالياً. سنتواصل معك خلال ١-٣ أيام عمل.' : 'Your request is currently under review. We will contact you within 1-3 business days.',

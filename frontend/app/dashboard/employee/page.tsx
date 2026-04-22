@@ -38,24 +38,26 @@ const BgPattern = () => (
       <rect width="1200" height="800" fill="url(#dots2)"/>
       <circle cx="1150" cy="80" r="160" fill="none" stroke="#1B6CA8" strokeWidth="0.6" opacity="0.2"/>
       <circle cx="1150" cy="80" r="100" fill="none" stroke="#4AACCD" strokeWidth="0.6" opacity="0.2"/>
-      <circle cx="1150" cy="80" r="50" fill="none" stroke="#C9A84C" strokeWidth="0.6" opacity="0.2"/>
-      <circle cx="60" cy="720" r="130" fill="none" stroke="#1B6CA8" strokeWidth="0.6" opacity="0.15"/>
-      <circle cx="60" cy="720" r="80" fill="none" stroke="#4AACCD" strokeWidth="0.6" opacity="0.15"/>
-      <line x1="900" y1="0" x2="1200" y2="300" stroke="#4AACCD" strokeWidth="0.5" opacity="0.15"/>
-      <line x1="930" y1="0" x2="1200" y2="270" stroke="#1B6CA8" strokeWidth="0.5" opacity="0.1"/>
-      <line x1="0" y1="550" x2="250" y2="800" stroke="#C9A84C" strokeWidth="0.5" opacity="0.15"/>
+      <circle cx="1150" cy="80" r="50"  fill="none" stroke="#C9A84C" strokeWidth="0.6" opacity="0.2"/>
+      <circle cx="60"   cy="720" r="130" fill="none" stroke="#1B6CA8" strokeWidth="0.6" opacity="0.15"/>
+      <circle cx="60"   cy="720" r="80"  fill="none" stroke="#4AACCD" strokeWidth="0.6" opacity="0.15"/>
+      <line x1="900" y1="0"   x2="1200" y2="300" stroke="#4AACCD" strokeWidth="0.5" opacity="0.15"/>
+      <line x1="930" y1="0"   x2="1200" y2="270" stroke="#1B6CA8" strokeWidth="0.5" opacity="0.1"/>
+      <line x1="0"   y1="550" x2="250"  y2="800" stroke="#C9A84C" strokeWidth="0.5" opacity="0.15"/>
     </svg>
   </div>
 );
 
 export default function EmployeeDashboard() {
   const router = useRouter();
-  const [user, setUser]         = useState<any>(null);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [pagination, setPagination]     = useState<any>(null);
+  const [user, setUser]                     = useState<any>(null);
+  const [requests, setRequests]             = useState<any[]>([]);
+  const [loading, setLoading]               = useState(true);
+  const [search, setSearch]                 = useState('');
+  const [statusFilter, setStatusFilter]     = useState('');
+  const [pagination, setPagination]         = useState<any>(null);
+  const [staleAlerts, setStaleAlerts]       = useState<any[]>([]);   // ✅
+  const [followUpAlerts, setFollowUpAlerts] = useState<any[]>([]);   // ✅
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -65,11 +67,37 @@ export default function EmployeeDashboard() {
     if (parsed.role === 'manager') { router.push('/dashboard/manager'); return; }
     setUser(parsed);
     fetchRequests();
+    fetchAlerts(); // ✅
   }, []);
 
   useEffect(() => {
     fetchRequests();
   }, [search, statusFilter]);
+
+  // ✅ fetch منفصل — كل الطلبات لاستخراج التنبيهات
+  const fetchAlerts = async () => {
+    try {
+      const res = await api.get('/requests?per_page=500');
+      const all: any[] = res.data.data || [];
+
+      setStaleAlerts(all.filter(r => {
+        const days = Math.floor(
+          (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return ['new', 'reviewing', 'needs_info'].includes(r.status) && days >= 5;
+      }));
+
+      setFollowUpAlerts(all.filter(r => {
+        const doc = r.case_documentation;
+        if (!doc?.needs_follow_up || !doc?.follow_up_date) return false;
+        if (!['pending', 'scheduled', 'rescheduled'].includes(doc.follow_up_status)) return false;
+        const diff = Math.floor(
+          (new Date(doc.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        );
+        return diff <= 1;
+      }));
+    } catch {}
+  };
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -182,8 +210,8 @@ export default function EmployeeDashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {[
                     { label: 'نوع المساعدة', value: assistanceMap[req.assistance_type] || req.assistance_type, color: '#374151' },
-                    { label: 'المنطقة',      value: req.region, color: '#374151' },
-                    { label: 'الأولوية',     value: priority.label, color: priority.color },
+                    { label: 'المنطقة',      value: req.region,       color: '#374151' },
+                    { label: 'الأولوية',     value: priority.label,   color: priority.color },
                     { label: 'التاريخ',      value: new Date(req.created_at).toLocaleDateString('ar-SA'), color: '#374151' },
                   ].map(item => (
                     <div key={item.label} style={{ background: '#F9FAFB', borderRadius: 8, padding: '8px 10px' }}>
@@ -207,22 +235,18 @@ export default function EmployeeDashboard() {
       {/* Navbar */}
       <nav style={{ background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${PRIMARY}20`, position: 'sticky', top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', boxSizing: 'border-box' }}>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-              <img src="/g-logo.png" alt="غزلان الخير"
-                style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }}
-                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>لوحة الموظف</div>
-                <div style={{ fontSize: 7, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
-              </div>
+            <img src="/g-logo.png" alt="غزلان الخير"
+              style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2, whiteSpace: 'nowrap' }}>لوحة الموظف</div>
+              <div style={{ fontSize: 7, color: PRIMARY_L, letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 500 }}>Ghozlan Alkhair</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             <NotificationBell />
-
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 10, background: `${PRIMARY}08`, border: `1px solid ${PRIMARY}20` }}>
               <div style={{ width: 26, height: 26, borderRadius: '50%', background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_L})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
                 {user?.name?.charAt(0)}
@@ -232,7 +256,6 @@ export default function EmployeeDashboard() {
                 <div style={{ fontSize: 8, color: PRIMARY_L }}>موظف</div>
               </div>
             </div>
-
             <button onClick={handleLogout}
               style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 9, padding: '6px 10px', cursor: 'pointer' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
@@ -305,8 +328,7 @@ export default function EmployeeDashboard() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث بالاسم أو الهاتف..."
               style={{ flex: 1, minWidth: 160, height: 36, border: '1px solid #E5E7EB', borderRadius: 10, padding: '0 12px', fontSize: 12, background: '#F9FAFB', outline: 'none', color: '#374151', boxSizing: 'border-box' }}
               onFocus={e => { e.target.style.background = 'white'; e.target.style.borderColor = `${PRIMARY}50`; }}
-              onBlur={e => { e.target.style.background = '#F9FAFB'; e.target.style.borderColor = '#E5E7EB'; }}
-            />
+              onBlur={e => { e.target.style.background = '#F9FAFB'; e.target.style.borderColor = '#E5E7EB'; }}/>
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
               style={{ height: 36, border: '1px solid #E5E7EB', borderRadius: 10, padding: '0 12px', fontSize: 12, background: 'white', outline: 'none', color: '#374151' }}>
               <option value="">كل الحالات</option>
@@ -325,60 +347,58 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        {/* Alerts */}
-        {(() => {
-          const staleRequests = requests.filter(r => {
-            const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-            return ['new', 'reviewing', 'needs_info'].includes(r.status) && days >= 5;
-          });
-          const followUpToday = requests.filter(r => {
-            const doc = r.case_documentation;
-            if (!doc?.needs_follow_up || !doc?.follow_up_date) return false;
-            if (!['pending', 'scheduled', 'rescheduled'].includes(doc.follow_up_status)) return false;
-            const diff = Math.floor((new Date(doc.follow_up_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-            return diff <= 1;
-          });
-          if (!staleRequests.length && !followUpToday.length) return null;
-          return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-              {staleRequests.length > 0 && (
-                <div style={{ borderRadius: 14, padding: '12px 16px', background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <svg width="18" height="18" fill="none" stroke="#D97706" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 6 }}>⚠️ {staleRequests.length} طلب بدون تحديث أكثر من 5 أيام</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {staleRequests.map(r => {
-                        const days = Math.floor((Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-                        return (
-                          <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
-                            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#FEF9C3', border: '1px solid #FDE68A', color: '#92400E', cursor: 'pointer', fontWeight: 600 }}>
-                            {r.full_name} — {days} أيام
-                          </button>
-                        );
-                      })}
-                    </div>
+        {/* ✅ Alerts — من fetchAlerts منفصل */}
+        {(staleAlerts.length > 0 || followUpAlerts.length > 0) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+
+            {staleAlerts.length > 0 && (
+              <div style={{ borderRadius: 14, padding: '12px 16px', background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <svg width="18" height="18" fill="none" stroke="#D97706" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 6 }}>
+                    ⚠️ {staleAlerts.length} طلب بدون تحديث أكثر من 5 أيام
                   </div>
-                </div>
-              )}
-              {followUpToday.length > 0 && (
-                <div style={{ borderRadius: 14, padding: '12px 16px', background: '#EDE9FE', border: '1px solid #DDD6FE', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <svg width="18" height="18" fill="none" stroke="#7C3AED" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', marginBottom: 6 }}>📅 {followUpToday.length} موعد متابعة اليوم أو غداً</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {followUpToday.map(r => (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {staleAlerts.map(r => {
+                      const days = Math.floor(
+                        (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24)
+                      );
+                      return (
                         <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
-                          style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#5B21B6', cursor: 'pointer', fontWeight: 600 }}>
-                          {r.full_name} — {new Date(r.case_documentation.follow_up_date).toLocaleDateString('ar-SA')}
+                          style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#FEF9C3', border: '1px solid #FDE68A', color: '#92400E', cursor: 'pointer', fontWeight: 600 }}>
+                          {r.full_name} — {days} أيام
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
-            </div>
-          );
-        })()}
+              </div>
+            )}
+
+            {followUpAlerts.length > 0 && (
+              <div style={{ borderRadius: 14, padding: '12px 16px', background: '#EDE9FE', border: '1px solid #DDD6FE', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <svg width="18" height="18" fill="none" stroke="#7C3AED" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', marginBottom: 6 }}>
+                    📅 {followUpAlerts.length} موعد متابعة اليوم أو غداً
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {followUpAlerts.map(r => (
+                      <button key={r.id} onClick={() => router.push(`/dashboard/requests/${r.id}`)}
+                        style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#5B21B6', cursor: 'pointer', fontWeight: 600 }}>
+                        {r.full_name} — {new Date(r.case_documentation.follow_up_date).toLocaleDateString('ar-SA')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Table */}
         <div style={{ borderRadius: 18, overflow: 'hidden', background: 'white', border: `1px solid ${PRIMARY}15`, boxShadow: `0 2px 12px ${PRIMARY}08` }}>
@@ -392,7 +412,7 @@ export default function EmployeeDashboard() {
         @media (max-width: 640px) {
           .emp-hide-mobile { display: none !important; }
           .emp-show-mobile { display: flex !important; }
-          .emp-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .emp-stats-grid  { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (min-width: 641px) {
           .emp-stats-grid { grid-template-columns: repeat(5, 1fr) !important; }
