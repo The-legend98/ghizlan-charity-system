@@ -8,16 +8,18 @@ export function getEcho(): any {
 
   (window as any).Pusher = Pusher;
 
+  const isSecure = process.env.NEXT_PUBLIC_REVERB_SCHEME === 'wss';
+
   echo = new Echo({
     broadcaster: 'reverb',
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY!,
-    wsHost: 'localhost',
-    wsPort: 8080,
-    wssPort: 8080,
-    forceTLS: false,
+    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST!,
+    wsPort: isSecure ? 443 : Number(process.env.NEXT_PUBLIC_REVERB_PORT),
+    wssPort: 443,
+    forceTLS: isSecure,
     disableStats: true,
-    enabledTransports: ['ws'],
-});
+    enabledTransports: isSecure ? ['wss'] : ['ws'],
+  });
 
   return echo;
 }
